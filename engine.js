@@ -51,7 +51,7 @@
   // a new swatch switches theme; the active one again flips its background and lines
   swatches.forEach(b => b.addEventListener("click", () => applyTheme(b.dataset.t, b.dataset.t === theme ? !inverted : false)));
 
-  if (touchMode && M.touchHint) document.getElementById("hint").textContent = M.touchHint;
+  if (touchMode && M.touchHint) document.getElementById("hint").textContent = M.touchHint + "; drag to turn it, pinch to zoom.";
 
   if (!window.THREE) return;
 
@@ -642,7 +642,7 @@
   resize();
   const camTarget = new THREE.Vector3(), camCur = { t: new THREE.Vector3(), d: 0, init: false };
   const tmpFocus = new THREE.Vector3();
-  let zoom = 1;   // keyboard zoom (+ / -)
+  let zoom = 1;   // zoom from the keyboard (+ / -), a pinch or the wheel
   // normal framing follows the explode amount; in "how it works" or on a part the camera zooms onto it
   function placeCamera(e, dt) {
     camTarget.lerpVectors(cA, cE, e).sub(mid);
@@ -694,6 +694,53 @@
   };
   canvas.addEventListener("pointerup", endDrag);
   canvas.addEventListener("pointercancel", endDrag);
+
+  // ---------- touch: one finger turns the model, two fingers pinch to zoom; the wheel zooms too ----------
+  // A finger only starts turning once it has moved, so a tap still opens the model and picks parts.
+  const touches = new Map();
+  let pinch = 0, touchTurned = false;
+  const spread = () => { const [a, b] = [...touches.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0; };
+  const zoomBy = f => { zoom = Math.max(0.45, Math.min(2.2, zoom * f)); };
+  canvas.addEventListener("pointerdown", e => {
+    if (e.pointerType !== "touch") return;
+    if (!touches.size) touchTurned = false;
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
+    canvas.setPointerCapture(e.pointerId);
+    pinch = spread();
+  });
+  canvas.addEventListener("pointermove", e => {
+    const t = touches.get(e.pointerId);
+    if (!t) return;
+    const dx = e.clientX - t.x, dy = e.clientY - t.y;
+    t.x = e.clientX; t.y = e.clientY;
+    if (touches.size === 1) {
+      if (!touchTurned && Math.hypot(t.x - t.x0, t.y - t.y0) < 8) return;
+      touchTurned = true;
+      drag.tYaw += dx * 0.008;
+      drag.tPitch = Math.max(PITCH[0], Math.min(PITCH[1], drag.tPitch + dy * 0.006));
+    } else {
+      touchTurned = true;
+      const s = spread();
+      if (pinch && s) zoomBy(pinch / s);
+      pinch = s;
+    }
+  });
+  const endTouch = e => {
+    if (!touches.delete(e.pointerId)) return;
+    pinch = spread();
+    // the finger left on the glass carries on turning from where it is, without a jump
+    touches.forEach(t => { t.x0 = t.x; t.y0 = t.y; });
+  };
+  canvas.addEventListener("pointerup", endTouch);
+  canvas.addEventListener("pointercancel", endTouch);
+  // the tap that ends a turn or a pinch is not a tap on the model
+  canvas.addEventListener("click", e => {
+    if (touchTurned && !touches.size) { touchTurned = false; e.stopImmediatePropagation(); }
+  }, true);
+  canvas.addEventListener("wheel", e => {
+    e.preventDefault();
+    zoomBy(Math.exp(Math.max(-1, Math.min(1, e.deltaY * (e.deltaMode ? 0.05 : 0.0015)))));
+  }, { passive: false });
 
   // ---------- left-drag a part while the model is apart: move it around ----------
   // The part slides in a plane facing the camera. A press that doesn't move is still a click (zoom in).
