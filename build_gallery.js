@@ -15,7 +15,7 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/, egpu/ and hover/build.js's); key: the localStorage theme key the page uses
+// macbookpro/, egpu/, hover/, cybertruck/ and rubiks/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
@@ -41,6 +41,10 @@ const MODELS = [
     folder: "turbofan_landing", key: "tf9-theme", category: "Engines" },
   { id: "hover", label: "HV-9 Hover Hauler", kind: "vehicle", tags: "vehicle hover hovercraft futuristic sci-fi spaceship ship hauler",
     dir: "hover", key: "hv9-theme", category: "Vehicles" },
+  { id: "cybertruck", label: "Cybertruck", kind: "truck", tags: "cybertruck tesla truck pickup electric ev vehicle car",
+    dir: "cybertruck", key: "ct-theme", category: "Vehicles" },
+  { id: "rubiks", label: "Rubik's Cube", kind: "puzzle", tags: "rubiks rubik cube puzzle toy 3x3 speedcube animated",
+    dir: "rubiks", key: "rc3-theme", category: "Toys" },
 ];
 const DEFAULT = "macintosh";
 
