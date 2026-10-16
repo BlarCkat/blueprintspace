@@ -14,12 +14,15 @@ const path = require("path");
 const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
-// folder: the page folder; key: the localStorage theme key the page uses
+// folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
+// macbookpro/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
   { id: "spectre", label: "Spectre x360 14", kind: "laptop", tags: "laptop hp convertible notebook 2-in-1",
     folder: "spectre_landing", key: "sx360-theme", category: "Computers" },
+  { id: "macbookpro", label: "MacBook Pro 14 (M5)", kind: "laptop", tags: "laptop apple macbook pro m5 notebook 2025",
+    dir: "macbookpro", key: "mbp14-theme", category: "Computers" },
   { id: "iphone17", label: "iPhone 17", kind: "phone", tags: "phone apple smartphone mobile",
     folder: "iphone17_landing", key: "ip17-theme", category: "Phones" },
   { id: "playstation", label: "PlayStation", kind: "console", tags: "console sony ps1 psx playstation 1 dualshock controller 1994 games",
@@ -40,8 +43,8 @@ const DEFAULT = "macintosh";
 // read as text with \r\n folded to \n, so a checkout with Windows line endings builds the same file
 const read = f => fs.readFileSync(f, "utf8").replace(/\r\n/g, "\n");
 
-function page(folder) {
-  const d = path.join(ROOT, folder);
+function page(folder, dir) {
+  const d = dir ? path.join(HERE, dir) : path.join(ROOT, folder);
   const html = read(path.join(d, "index.html"));
   // local <script src="x.js"> -> inline script
   return html.replace(/<script src="(?!https?:)([^"]+)"><\/script>/g,
@@ -53,8 +56,8 @@ const json = v => JSON.stringify(v)
   .replace(/[\u0080-￿]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"))
   .replace(/("(?:[^"\\]|\\.)*"|[^"]+)/g, t => t[0] === '"' ? t : t.replace(/,/g, ", ").replace(/:/g, ": "));
 
-const models = MODELS.map(({ id, label, kind, tags, folder, key, category }) =>
-  ({ id, label, kind, tags, key, category, html: page(folder) }));
+const models = MODELS.map(({ id, label, kind, tags, folder, dir, key, category }) =>
+  ({ id, label, kind, tags, key, category, html: page(folder, dir) }));
 
 const shell = read(path.join(HERE, "gallery_shell.html"));
 const data = json(models).split("<").join("\\u003c");  // no "</script>" or "<!--" inside the script
