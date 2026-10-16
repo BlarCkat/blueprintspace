@@ -354,7 +354,11 @@ window.CT_GEOMETRY.data = "gPjQ6eAGgAfQ6eAGgAfA6oQDgPjA6oQDgAfQ6cYH0AfA6gwIfAfQ6
   // a new swatch switches theme; the active one again flips its background and lines
   swatches.forEach(b => b.addEventListener("click", () => applyTheme(b.dataset.t, b.dataset.t === theme ? !inverted : false)));
 
-  if (touchMode && M.touchHint) document.getElementById("hint").textContent = M.touchHint + "; drag to turn it, pinch to zoom.";
+  if (touchMode && M.touchHint) document.getElementById("hint").textContent = M.touchHint + "; drag to turn it, pinch to zoom, two fingers to pan.";
+  else {
+    const hint = document.getElementById("hint");
+    if (hint) hint.innerHTML = hint.innerHTML.replace("to rotate,", "to rotate, drag empty space to pan,");
+  }
 
   if (!window.THREE) return;
 
@@ -946,13 +950,21 @@ window.CT_GEOMETRY.data = "gPjQ6eAGgAfQ6eAGgAfA6oQDgPjA6oQDgAfQ6cYH0AfA6gwIfAfQ6
   const camTarget = new THREE.Vector3(), camCur = { t: new THREE.Vector3(), d: 0, init: false };
   const tmpFocus = new THREE.Vector3();
   let zoom = 1;   // zoom from the keyboard (+ / -), a pinch or the wheel
+  // pan: the camera's target moved across the screen, in model radii (x right, y up)
+  const pan = { x: 0, y: 0 };
+  const panRight = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
+  const panUp = new THREE.Vector3().crossVectors(dir, panRight);
   // normal framing follows the explode amount; in "how it works" or on a part the camera zooms onto it
   function placeCamera(e, dt) {
     camTarget.lerpVectors(cA, cE, e).sub(mid);
     let d = (dA + (dE - dA) * e) * zoom;
     const z = flow.focus(tmpFocus);
     if (z) { camTarget.copy(tmpFocus); d = dA * z; }
-    else { const r = detail.focus(tmpFocus); if (r) { camTarget.copy(tmpFocus); d = r * 1.5 / fitSin; } }
+    else {
+      const r = detail.focus(tmpFocus);
+      if (r) { camTarget.copy(tmpFocus); d = r * 1.5 / fitSin; }
+      else camTarget.addScaledVector(panRight, pan.x * rA).addScaledVector(panUp, pan.y * rA);
+    }
     if (!camCur.init) { camCur.t.copy(camTarget); camCur.d = d; camCur.init = true; }
     const k = reduceMotion ? 1 : 1 - Math.exp(-dt * 3);
     camCur.t.lerp(camTarget, k);
@@ -1001,15 +1013,16 @@ window.CT_GEOMETRY.data = "gPjQ6eAGgAfQ6eAGgAfA6oQDgPjA6oQDgAfQ6cYH0AfA6gwIfAfQ6
   // ---------- touch: one finger turns the model, two fingers pinch to zoom; the wheel zooms too ----------
   // A finger only starts turning once it has moved, so a tap still opens the model and picks parts.
   const touches = new Map();
-  let pinch = 0, touchTurned = false;
+  let pinch = 0, touchTurned = false, between = null;
   const spread = () => { const [a, b] = [...touches.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0; };
+  const midway = () => { const [a, b] = [...touches.values()]; return a && b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : null; };
   const zoomBy = f => { zoom = Math.max(0.45, Math.min(2.2, zoom * f)); };
   canvas.addEventListener("pointerdown", e => {
     if (e.pointerType !== "touch") return;
     if (!touches.size) touchTurned = false;
     touches.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
     canvas.setPointerCapture(e.pointerId);
-    pinch = spread();
+    pinch = spread(); between = midway();
   });
   canvas.addEventListener("pointermove", e => {
     const t = touches.get(e.pointerId);
@@ -1023,14 +1036,15 @@ window.CT_GEOMETRY.data = "gPjQ6eAGgAfQ6eAGgAfA6oQDgPjA6oQDgAfQ6cYH0AfA6gwIfAfQ6
       drag.tPitch = Math.max(PITCH[0], Math.min(PITCH[1], drag.tPitch + dy * 0.006));
     } else {
       touchTurned = true;
-      const s = spread();
+      const s = spread(), m = midway();
       if (pinch && s) zoomBy(pinch / s);
-      pinch = s;
+      if (between && m) panBy(m.x - between.x, m.y - between.y);
+      pinch = s; between = m;
     }
   });
   const endTouch = e => {
     if (!touches.delete(e.pointerId)) return;
-    pinch = spread();
+    pinch = spread(); between = midway();
     // the finger left on the glass carries on turning from where it is, without a jump
     touches.forEach(t => { t.x0 = t.x; t.y0 = t.y; });
   };
@@ -1092,6 +1106,42 @@ window.CT_GEOMETRY.data = "gPjQ6eAGgAfQ6eAGgAfA6oQDgPjA6oQDgAfQ6cYH0AfA6gwIfAfQ6
   canvas.addEventListener("click", e => {
     if (partDrag.justDragged) { partDrag.justDragged = false; e.stopImmediatePropagation(); }
   }, true);
+
+  // ---------- pan: drag empty space with the mouse, or middle-drag anywhere (two fingers on a touch screen) ----------
+  // The model follows the pointer across the screen. A press that doesn't move is still a click.
+  const panDrag = { down: false, on: false, id: null, x: 0, y: 0, just: false };
+  const clampPan = v => Math.max(-3, Math.min(3, v));
+  function panBy(dx, dy) {
+    const perPx = 2 * camCur.d * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / innerHeight / rA;
+    pan.x = clampPan(pan.x - dx * perPx);
+    pan.y = clampPan(pan.y + dy * perPx);
+  }
+  canvas.addEventListener("mousedown", e => { if (e.button === 1) e.preventDefault(); });   // no autoscroll
+  canvas.addEventListener("pointerdown", e => {
+    if (e.pointerType !== "mouse" || (e.button !== 0 && e.button !== 1)) return;
+    if (e.button === 0 && partDrag.down) return;   // on a part, that's the part's drag
+    panDrag.down = true; panDrag.on = e.button === 1; panDrag.id = e.pointerId; panDrag.x = e.clientX; panDrag.y = e.clientY;
+    if (panDrag.on) { canvas.setPointerCapture(e.pointerId); canvas.classList.add("dragging"); }
+  });
+  canvas.addEventListener("pointermove", e => {
+    if (!panDrag.down || e.pointerId !== panDrag.id) return;
+    if (!panDrag.on) {
+      if (Math.hypot(e.clientX - panDrag.x, e.clientY - panDrag.y) < 5) return;
+      panDrag.on = true;
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add("dragging");
+    }
+    panBy(e.clientX - panDrag.x, e.clientY - panDrag.y);
+    panDrag.x = e.clientX; panDrag.y = e.clientY;
+  });
+  const endPan = e => {
+    if (!panDrag.down || e.pointerId !== panDrag.id) return;
+    if (panDrag.on) { panDrag.just = true; canvas.classList.remove("dragging"); }
+    panDrag.down = panDrag.on = false;
+  };
+  canvas.addEventListener("pointerup", endPan);
+  canvas.addEventListener("pointercancel", endPan);
+  canvas.addEventListener("click", e => { if (panDrag.just) { panDrag.just = false; e.stopImmediatePropagation(); } }, true);
   const partList = Object.values(partGroups);
   let resetUntil = 0;
   function settleParts(k) {
@@ -1136,7 +1186,7 @@ window.CT_GEOMETRY.data = "gPjQ6eAGgAfQ6eAGgAfA6oQDgPjA6oQDgAfQ6cYH0AfA6gwIfAfQ6
     } else if (k === "+" || k === "=") { zoom = Math.max(0.45, zoom / 1.15); }
     else if (k === "-" || k === "_") { zoom = Math.min(2.2, zoom * 1.15); }
     else if (k === "r" || k === "R") {
-      drag.tYaw = drag.tPitch = 0; zoom = 1; partIdx = -1;
+      drag.tYaw = drag.tPitch = 0; zoom = 1; pan.x = pan.y = 0; partIdx = -1;
       resetUntil = performance.now() + 1500;
       if (detail.mesh) zoomTo(null);
       tapped = null; refresh();
@@ -1172,20 +1222,22 @@ window.CT_GEOMETRY.data = "gPjQ6eAGgAfQ6eAGgAfA6oQDgPjA6oQDgAfQ6cYH0AfA6gwIfAfQ6
   if (xrayBtn) xrayBtn.addEventListener("click", () => setXray(!xray));
 
   // ---------- views: preset angles, and a saved view that every model opens in ----------
-  // A view is absolute: the angle round the model and the height it's seen from (degrees) and the zoom, so a
+  // A view is absolute: the angle round the model and the height it's seen from (degrees), the zoom and the pan, so a
   // view saved on one model frames every other model the same way. Turning the model by `yaw` moves the camera
   // the other way round it, and tilting it by `pitch` raises the camera. While a view is saved, it follows
   // whatever you turn to, and other models open in it; Save view again forgets it.
   const VIEW_KEY = "bp-view", PRESETS = [30, 45, 90];
   const rad = THREE.MathUtils.degToRad, deg = THREE.MathUtils.radToDeg, round1 = v => Math.round(v * 10) / 10;
   const wrap360 = a => ((a % 360) + 360) % 360;
-  const viewNow = () => ({ az: round1(wrap360(V.az - deg(drag.tYaw))), el: round1(V.el + deg(drag.tPitch)), zoom: round1(zoom * 100) / 100 });
+  const viewNow = () => ({ az: round1(wrap360(V.az - deg(drag.tYaw))), el: round1(V.el + deg(drag.tPitch)), zoom: round1(zoom * 100) / 100,
+    panX: Math.round(pan.x * 1000) / 1000, panY: Math.round(pan.y * 1000) / 1000 });
   function applyView(v, snap) {
     // the shortest way round to the new angle
     const target = rad(V.az - v.az), d = ((target - drag.tYaw) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
     drag.tYaw += d;
     drag.tPitch = Math.max(PITCH[0], Math.min(PITCH[1], rad(v.el - V.el)));
     if (v.zoom) zoom = Math.max(0.45, Math.min(2.2, v.zoom));
+    if (typeof v.panX === "number") { pan.x = clampPan(v.panX); pan.y = clampPan(v.panY || 0); }
     if (snap) { drag.yaw = drag.tYaw; drag.pitch = drag.tPitch; }
   }
   const viewCss = document.createElement("style");
@@ -1237,7 +1289,7 @@ window.CT_GEOMETRY.data = "gPjQ6eAGgAfQ6eAGgAfA6oQDgPjA6oQDgAfQ6cYH0AfA6gwIfAfQ6
   setInterval(() => {
     const v = viewNow();
     presetBtns.forEach(b => b.setAttribute("aria-pressed", String(Math.abs(((v.az - b.dataset.az) % 360 + 540) % 360 - 180) < 0.5)));
-    if (savedView && (v.az !== savedView.az || v.el !== savedView.el || v.zoom !== savedView.zoom)) setSaved(v);
+    if (savedView && JSON.stringify(v) !== JSON.stringify(savedView)) setSaved(v);
   }, 300);
 
   // ---------- your own photo or video on the screen (models with a screen) ----------

@@ -15,10 +15,12 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/, egpu/, hover/, cybertruck/ and rubiks/build.js's); key: the localStorage theme key the page uses
+// macbookpro/, egpu/, hover/, cybertruck/, rubiks/, typewriter/ and xbox/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
+  { id: "typewriter", label: "Vintage Typewriter", kind: "machine", tags: "typewriter vintage retro office keys type mechanical animated",
+    dir: "typewriter", key: "tw-theme", category: "Computers" },
   { id: "spectre", label: "Spectre x360 14", kind: "laptop", tags: "laptop hp convertible notebook 2-in-1",
     folder: "spectre_landing", key: "sx360-theme", category: "Computers" },
   { id: "macbookpro", label: "MacBook Pro 14 (M5)", kind: "laptop", tags: "laptop apple macbook pro m5 notebook 2025",
@@ -33,6 +35,8 @@ const MODELS = [
     folder: "ps4_landing", key: "ps4-theme", category: "Consoles" },
   { id: "ps5", label: "PlayStation 5", kind: "console", tags: "console sony ps5 dualsense 2020 games",
     folder: "ps5_landing", key: "ps5-theme", category: "Consoles" },
+  { id: "xbox", label: "Xbox Series X", kind: "console", tags: "xbox series x microsoft console games 2020 fan",
+    dir: "xbox", key: "xsx-theme", category: "Consoles" },
   { id: "cpu", label: "X9 Processor", kind: "chip", tags: "chip cpu desktop socket lga",
     folder: "cpu_landing", key: "x9-theme", category: "Components" },
   { id: "egpu", label: "EG-1 eGPU", kind: "egpu", tags: "egpu external gpu graphics card enclosure thunderbolt fans pcie",
