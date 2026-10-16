@@ -15,7 +15,7 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/, egpu/, hover/, cybertruck/, rubiks/, typewriter/ and xbox/build.js's); key: the localStorage theme key the page uses
+// macbookpro/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/ and v8/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
@@ -43,6 +43,8 @@ const MODELS = [
     dir: "egpu", key: "eg1-theme", category: "Components" },
   { id: "turbofan", label: "TF-9 Turbofan", kind: "engine", tags: "engine jet turbine aircraft",
     folder: "turbofan_landing", key: "tf9-theme", category: "Engines" },
+  { id: "v8", label: "V8 Engine", kind: "engine", tags: "v8 engine motor car pushrod small block pistons crankshaft animated",
+    dir: "v8", key: "v8-theme", category: "Engines" },
   { id: "hover", label: "HV-9 Hover Hauler", kind: "vehicle", tags: "vehicle hover hovercraft futuristic sci-fi spaceship ship hauler",
     dir: "hover", key: "hv9-theme", category: "Vehicles" },
   { id: "cybertruck", label: "Cybertruck", kind: "truck", tags: "cybertruck tesla truck pickup electric ev vehicle car",
