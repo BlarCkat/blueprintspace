@@ -1342,6 +1342,57 @@ window.RC_GEOMETRY.data = "AAAAAHT/NAAOAH//NgAAAH//LgAbAH//JgAmAH//GwAuAH//DgA0A
     if (savedView && JSON.stringify(v) !== JSON.stringify(savedView)) setSaved(v);
   }, 300);
 
+  // ---------- pan pad: arrows that move the view, held to keep moving, and a button that centres it ----------
+  // An arrow moves the view that way (so the model slides the other way); Alt + arrow keys do the same.
+  const padCss = document.createElement("style");
+  padCss.textContent = `
+    .panpad { position: fixed; z-index: 5; left: var(--gutter); display: grid; grid-template-columns: repeat(3, 24px); grid-auto-rows: 24px;
+      gap: 2px; padding: 5px; border: 1px solid var(--rule); border-radius: 18px; background: var(--panel);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    .panpad button { width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--fg-2);
+      font: 500 12px/1 var(--mono); cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none; transition: background-color .15s, color .15s; }
+    .panpad button:hover { color: var(--fg); }
+    .panpad button.held, .panpad button:active { background: var(--fg); color: var(--bg); }
+    .panpad button:focus-visible { outline: 1px dashed var(--fg); outline-offset: 1px; }
+    .zoomed .panpad, .flowing .panpad { opacity: .3; }
+    /* on a phone it sits bottom right, above the hint, clear of the model */
+    @media (max-width: 760px) { .panpad { left: auto; right: var(--gutter); top: auto !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 78px); } }`;
+  document.head.appendChild(padCss);
+  const panpad = document.createElement("div");
+  panpad.className = "panpad"; panpad.setAttribute("role", "group"); panpad.setAttribute("aria-label", "Pan the view");
+  const PAD = [["up", 0, 1, "↑", 2, 1], ["left", -1, 0, "←", 1, 2], ["centre", 0, 0, "◎", 2, 2], ["right", 1, 0, "→", 3, 2], ["down", 0, -1, "↓", 2, 3]];
+  const nudge = (dx, dy, k) => { pan.x = clampPan(pan.x + dx * k * zoom); pan.y = clampPan(pan.y + dy * k * zoom); };
+  PAD.forEach(([name, dx, dy, glyph, col, row]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = glyph; b.style.gridColumn = col; b.style.gridRow = row;
+    b.setAttribute("aria-label", name === "centre" ? "Centre the view" : "Pan " + name);
+    b.title = name === "centre" ? "Centre the view" : "Pan " + name + " (Alt + arrow; hold to keep going)";
+    let wait = null, rep = null;
+    const stop = () => { clearTimeout(wait); clearInterval(rep); wait = rep = null; b.classList.remove("held"); };
+    b.addEventListener("pointerdown", e => {
+      e.preventDefault(); e.stopPropagation();
+      if (name === "centre") { pan.x = pan.y = 0; return; }
+      nudge(dx, dy, 0.08); b.classList.add("held");
+      // held: a steady speed (radii a second), however often the timer gets to run
+      wait = setTimeout(() => { let last = performance.now(); rep = setInterval(() => { const now = performance.now(); nudge(dx, dy, 0.75 * (now - last) / 1000); last = now; }, 30); }, 280);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(t => b.addEventListener(t, stop));
+    // from the keyboard (Enter or Space on a focused button) a click is one step
+    b.addEventListener("click", e => { e.stopPropagation(); if (e.detail === 0) { if (name === "centre") pan.x = pan.y = 0; else nudge(dx, dy, 0.08); } });
+    panpad.appendChild(b);
+  });
+  document.body.appendChild(panpad);
+  function placePanpad() { panpad.style.top = Math.round(viewbar.getBoundingClientRect().bottom + 10) + "px"; }
+  addEventListener("resize", () => requestAnimationFrame(placePanpad));
+  new MutationObserver(() => requestAnimationFrame(placePanpad)).observe(document.querySelector("header") || document.body, { childList: true, subtree: true });
+  requestAnimationFrame(placePanpad);
+  addEventListener("keydown", e => {
+    if (!e.altKey || e.metaKey || e.ctrlKey || !e.key.startsWith("Arrow") || e.target.closest("input, select, textarea, [contenteditable]")) return;
+    e.preventDefault();
+    const d = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+    nudge(d[0], d[1], 0.08);
+  });
+
   // ---------- your own photo or video on the screen (models with a screen) ----------
   // The picture fills the screen's active area (cropped to fit, rounded corners kept) in every render style
   // and in the exports. It's only held in this page; nothing is uploaded.
