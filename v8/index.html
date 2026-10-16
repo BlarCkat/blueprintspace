@@ -427,6 +427,7 @@ window.V8_GEOMETRY.data = "PPZ4FFgCPPZ4FBj8xAl4FBj8xAl4FFgCExB4FDoJOgl4FBMQ7AJ4F
   // a new swatch switches theme; the active one again flips its background and lines
   swatches.forEach(b => b.addEventListener("click", () => applyTheme(b.dataset.t, b.dataset.t === theme ? !inverted : false)));
 
+  const HINT0 = (document.getElementById("hint") || {}).innerHTML || "";   // the page's own hint, before a touch hint replaces it
   if (touchMode && M.touchHint) document.getElementById("hint").textContent = M.touchHint + "; drag to turn it, pinch to zoom, two fingers to pan.";
   else {
     const hint = document.getElementById("hint");
@@ -1364,6 +1365,27 @@ window.V8_GEOMETRY.data = "PPZ4FFgCPPZ4FBj8xAl4FBj8xAl4FFgCExB4FDoJOgl4FBMQ7AJ4F
     presetBtns.forEach(b => b.setAttribute("aria-pressed", String(Math.abs(((v.az - b.dataset.az) % 360 + 540) % 360 - 180) < 0.5)));
     if (savedView && JSON.stringify(v) !== JSON.stringify(savedView)) setSaved(v);
   }, 300);
+
+  // ---------- the screen animation, from a button: what "/" does, for touch screens with no keyboard ----------
+  // Models with one say so in their hint (or set M.screenAnimation); the button sends the same key press.
+  const toolsEl = document.querySelector(".tools");
+  if (toolsEl && (M.screenAnimation || /for the screen/.test(HINT0))) {
+    const anim = document.createElement("button");
+    anim.type = "button"; anim.className = "tool"; anim.id = "animate"; anim.textContent = "Animate";
+    anim.setAttribute("aria-pressed", "false"); anim.title = "Play the screen's animation (/)";
+    let playing = false;
+    const press = () => document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "/", code: "Slash", bubbles: true }));
+    anim.addEventListener("click", e => { e.stopPropagation(); press(); });
+    // the key itself toggles it too, so the button follows either
+    addEventListener("keydown", e => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, [contenteditable]"))) return;
+      playing = !playing; anim.setAttribute("aria-pressed", String(playing));
+    });
+    toolsEl.insertBefore(anim, document.getElementById("xray") || toolsEl.firstChild);
+    const css = document.createElement("style");
+    css.textContent = "#animate[aria-pressed=\"true\"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }";
+    document.head.appendChild(css);
+  }
 
   // ---------- pan pad: arrows that move the view, held to keep moving, and a button that centres it ----------
   // An arrow moves the view that way (so the model slides the other way); Alt + arrow keys do the same.
