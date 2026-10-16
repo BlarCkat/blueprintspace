@@ -1,11 +1,10 @@
 /*
 MacBook Pro 14 (M5): builds the model page and adds it to the gallery.
 
-There is no Blender source for this model: its geometry is generated here, in Blender mm (Z up, X to the
-right, Y to the back, the base's centre at the origin), in the same packed format export_geometry.py writes
-(Int16 positions times `scale`, then per-object Uint16 indices: line pairs, then triangles). The page's
-chrome and the shared engine come from the Spectre page already in the gallery, so the new page matches the
-others exactly; only the geometry and the model script (model.js) are new. Re-run after any change:
+There is no Blender source for this model: its geometry is generated here (with lib/procedural.js), in Blender
+mm with Z up, X to the right, Y to the back and the base's centre at the origin. The page's chrome and the
+shared engine come from the Spectre page already in the gallery, so the new page matches the others exactly;
+only the geometry and the model script (model.js) are new. Re-run after any change:
 
     node macbookpro/build.js
 
@@ -14,11 +13,10 @@ Writes macbookpro/index.html (the page on its own) and replaces or inserts the m
 "use strict";
 const fs = require("fs");
 const path = require("path");
+const { read, withFrame, part, loop, rrPts, circlePts, rrRegion, rect, fanRegion, stripRegion, extrude, sheet, rrBody, cyl,
+  sweep, holeWalls, r3, geometryScript, buildPage, addToGallery } = require("../lib/procedural");
 
 const HERE = __dirname;
-const REPO = path.join(HERE, "..");
-const SCALE = 0.05;
-const read = f => fs.readFileSync(f, "utf8").replace(/\r\n/g, "\n");
 
 // ---------- dimensions (mm) ----------
 const HW = 156.3, HH = 110.6;     // half the base's 312.6 x 221.2 footprint
@@ -32,217 +30,6 @@ const ts = Math.sin(LID_TILT * Math.PI / 180), tc = Math.cos(LID_TILT * Math.PI 
 // lid parts are drawn in (x, u, w): u up the lid from the hinge axis, w through it towards the back
 const lidF = ([x, u, w]) => [x, HINGE_Y + u * ts + w * tc, HINGE_Z + u * tc - w * ts];
 
-// ---------- mesh building ----------
-const parts = [];
-let frame = q => q;
-function withFrame(f, fn) {
-  const prev = frame;
-  frame = q => prev(f(q));
-  try { fn(); } finally { frame = prev; }
-}
-function part(name, module, kind) {
-  const p = { name, module, kind, v: [], at: new Map(), lines: [], lineSet: new Set(), tris: [] };
-  parts.push(p);
-  return p;
-}
-function vert(p, q) {
-  const k = frame(q).map(c => Math.round(c / SCALE));
-  const key = k.join(",");
-  let i = p.at.get(key);
-  if (i === undefined) { i = p.v.length / 3; p.v.push(...k); p.at.set(key, i); }
-  return i;
-}
-function line(p, a, b) {
-  const i = vert(p, a), j = vert(p, b);
-  if (i === j) return;
-  const key = i < j ? i + "," + j : j + "," + i;
-  if (p.lineSet.has(key)) return;
-  p.lineSet.add(key);
-  p.lines.push(i, j);
-}
-function tri(p, a, b, c) {
-  const i = vert(p, a), j = vert(p, b), k = vert(p, c);
-  if (i === j || j === k || i === k) return;
-  p.tris.push(i, j, k);
-}
-function loop(p, pts) { pts.forEach((q, i) => line(p, q, pts[(i + 1) % pts.length])); }
-
-// ---------- 2D regions (lists of counter-clockwise triangles) ----------
-const CORNERS = [[-1, -1, 180], [1, -1, 270], [1, 1, 0], [-1, 1, 90]];   // bl, br, tr, tl and each arc's start angle
-const radii = r => Array.isArray(r) ? r : [r, r, r, r];
-// rounded rectangle outline, counter-clockwise from the bottom-left arc; always seg + 1 points per corner,
-// so rings of a loft line up even where a corner is square
-function rrPts(cx, cy, hw, hh, r, seg = 6) {
-  const out = [];
-  radii(r).forEach((rk, k) => {
-    const [sx, sy, a0] = CORNERS[k];
-    const ox = cx + sx * (hw - rk), oy = cy + sy * (hh - rk);
-    for (let s = 0; s <= seg; s++) {
-      const a = (a0 + 90 * s / seg) * Math.PI / 180;
-      out.push([ox + rk * Math.cos(a), oy + rk * Math.sin(a)]);
-    }
-  });
-  return out;
-}
-const circlePts = (cx, cy, r, n) => Array.from({ length: n }, (_, i) => [cx + r * Math.cos(2 * Math.PI * i / n), cy + r * Math.sin(2 * Math.PI * i / n)]);
-// a rounded rectangle less axis-aligned rectangular holes [x0, x1, y0, y1] (which may run off its edge):
-// a grid of cells between every edge, with a fan in each rounded corner
-function rrRegion(cx, cy, hw, hh, r, seg = 6, holes = []) {
-  const Rs = radii(r);
-  const x0 = cx - hw, x1 = cx + hw, y0 = cy - hh, y1 = cy + hh;
-  const xs = new Set([x0, x1]), ys = new Set([y0, y1]);
-  Rs.forEach((rk, k) => {
-    if (rk <= 0) return;
-    xs.add(cx + CORNERS[k][0] * (hw - rk)); ys.add(cy + CORNERS[k][1] * (hh - rk));
-  });
-  holes.forEach(h => {
-    [h[0], h[1]].forEach(x => { if (x > x0 && x < x1) xs.add(x); });
-    [h[2], h[3]].forEach(y => { if (y > y0 && y < y1) ys.add(y); });
-  });
-  const X = [...xs].sort((a, b) => a - b), Y = [...ys].sort((a, b) => a - b);
-  const inCorner = (px, py) => Rs.some((rk, k) => rk > 0 &&
-    (px - cx) * CORNERS[k][0] > hw - rk && (py - cy) * CORNERS[k][1] > hh - rk);
-  const inHole = (px, py) => holes.some(h => px > h[0] && px < h[1] && py > h[2] && py < h[3]);
-  // a grid edge inside a corner's band would meet the corner fan in a T: keep holes clear of the corners
-  Rs.forEach((rk, k) => {
-    if (rk <= 0) return;
-    const bx = cx + CORNERS[k][0] * (hw - rk), by = cy + CORNERS[k][1] * (hh - rk);
-    const inside = (v, b, s, lim) => (v - b) * s > 1e-9 && (lim - v) * s > 1e-9;
-    if (X.some(x => inside(x, bx, CORNERS[k][0], CORNERS[k][0] > 0 ? x1 : x0)) ||
-        Y.some(y => inside(y, by, CORNERS[k][1], CORNERS[k][1] > 0 ? y1 : y0)))
-      throw new Error("hole edge inside a rounded corner of a " + (2 * hw) + " x " + (2 * hh) + " region");
-  });
-  const out = [];
-  for (let i = 0; i + 1 < X.length; i++) for (let j = 0; j + 1 < Y.length; j++) {
-    const mx = (X[i] + X[i + 1]) / 2, my = (Y[j] + Y[j + 1]) / 2;
-    if (inCorner(mx, my) || inHole(mx, my)) continue;
-    const a = [X[i], Y[j]], b = [X[i + 1], Y[j]], c = [X[i + 1], Y[j + 1]], d = [X[i], Y[j + 1]];
-    out.push([a, b, c], [a, c, d]);
-  }
-  Rs.forEach((rk, k) => {
-    if (rk <= 0) return;
-    const [sx, sy, a0] = CORNERS[k];
-    const o = [cx + sx * (hw - rk), cy + sy * (hh - rk)];
-    if (inHole(o[0] + sx * rk / 2, o[1] + sy * rk / 2)) return;
-    for (let s = 0; s < seg; s++) {
-      const a = (a0 + 90 * s / seg) * Math.PI / 180, b = (a0 + 90 * (s + 1) / seg) * Math.PI / 180;
-      out.push([o, [o[0] + rk * Math.cos(a), o[1] + rk * Math.sin(a)], [o[0] + rk * Math.cos(b), o[1] + rk * Math.sin(b)]]);
-    }
-  });
-  return out;
-}
-const rect = (x0, x1, y0, y1) => rrRegion((x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2, (y1 - y0) / 2, 0);
-// a convex outline, fanned from its centre
-function fanRegion(pts) {
-  const c = pts.reduce((m, q) => [m[0] + q[0] / pts.length, m[1] + q[1] / pts.length], [0, 0]);
-  return pts.map((q, i) => [c, q, pts[(i + 1) % pts.length]]);
-}
-// the band between two polylines (a curved blade)
-function stripRegion(left, right) {
-  const out = [];
-  for (let i = 0; i + 1 < left.length; i++) out.push([right[i], right[i + 1], left[i + 1]], [right[i], left[i + 1], left[i]]);
-  return out;
-}
-const k2 = q => q[0].toFixed(3) + "," + q[1].toFixed(3);
-// the region's outline: triangle edges that no other triangle shares, in the triangles' direction
-function boundary(tris) {
-  const seen = new Map();
-  tris.forEach(t => {
-    for (let k = 0; k < 3; k++) {
-      const a = t[k], b = t[(k + 1) % 3], ka = k2(a), kb = k2(b);
-      const u = ka < kb ? ka + "|" + kb : kb + "|" + ka;
-      const e = seen.get(u);
-      if (e) e.n++; else seen.set(u, { n: 1, a, b });
-    }
-  });
-  return [...seen.values()].filter(e => e.n === 1).map(e => [e.a, e.b]);
-}
-// outline points where it turns by more than `deg` (a real corner, not a step round an arc)
-function sharpPoints(B, deg = 30) {
-  const into = new Map();
-  B.forEach(e => into.set(k2(e[1]), e));
-  const out = [];
-  B.forEach(([a, b]) => {
-    const e = into.get(k2(a));
-    if (!e) return;
-    const d0 = [a[0] - e[0][0], a[1] - e[0][1]], d1 = [b[0] - a[0], b[1] - a[1]];
-    const c = (d0[0] * d1[0] + d0[1] * d1[1]) / (Math.hypot(...d0) * Math.hypot(...d1));
-    if (c < Math.cos(deg * Math.PI / 180)) out.push(a);
-  });
-  return out;
-}
-
-// ---------- solids ----------
-// a region pushed from z0 to z1: caps, walls round its outline, lines round both ends and up its corners
-function extrude(p, tris, z0, z1, o = {}) {
-  const P = (q, z) => [q[0], q[1], z];
-  if (o.top !== false) tris.forEach(t => tri(p, P(t[0], z1), P(t[1], z1), P(t[2], z1)));
-  if (o.bottom !== false) tris.forEach(t => tri(p, P(t[0], z0), P(t[2], z0), P(t[1], z0)));
-  const B = boundary(tris);
-  B.forEach(([a, b]) => {
-    if (!o.wallIf || o.wallIf(a, b)) { tri(p, P(a, z0), P(b, z0), P(b, z1)); tri(p, P(a, z0), P(b, z1), P(a, z1)); }
-    line(p, P(a, z0), P(b, z0));
-    line(p, P(a, z1), P(b, z1));
-  });
-  sharpPoints(B).forEach(q => line(p, P(q, z0), P(q, z1)));
-}
-// a flat sheet with its outline
-function sheet(p, tris, z) {
-  const P = q => [q[0], q[1], z];
-  tris.forEach(t => tri(p, P(t[0]), P(t[1]), P(t[2])));
-  boundary(tris).forEach(([a, b]) => line(p, P(a), P(b)));
-}
-// rings of matching points joined by quads; hard rings are drawn as lines
-function loft(p, rings) {
-  const n = rings[0].pts.length;
-  for (let r = 0; r + 1 < rings.length; r++) for (let i = 0; i < n; i++) {
-    const A = rings[r].pts, B = rings[r + 1].pts, j = (i + 1) % n;
-    tri(p, A[i], A[j], B[j]); tri(p, A[i], B[j], B[i]);
-  }
-  rings.forEach(g => { if (g.hard) loop(p, g.pts); });
-}
-// a rounded-rectangle body whose outline steps in along `profile` ([inset, z, hard] from bottom to top),
-// for filleted and chamfered edges (the step next to a cap is kept steeper than the shaded style's 32 degree
-// crease, or the corner fans shade as if they were part of the fillet); caps on either end, the top one with optional holes
-function rrBody(p, cx, cy, hw, hh, r, profile, o = {}) {
-  const seg = o.seg || 6;
-  const ring = ([inset, z, hard]) => ({
-    hard, pts: rrPts(cx, cy, hw - inset, hh - inset, radii(r).map(rk => Math.max(rk - inset, 0)), seg).map(q => [q[0], q[1], z]),
-  });
-  loft(p, profile.map(ring));
-  const cap = ([inset, z], holes) => ({ z, tris: rrRegion(cx, cy, hw - inset, hh - inset, radii(r).map(rk => Math.max(rk - inset, 0)), seg, holes) });
-  if (o.top !== false) { const c = cap(profile[profile.length - 1], o.holes); c.tris.forEach(t => tri(p, [...t[0], c.z], [...t[1], c.z], [...t[2], c.z])); }
-  if (o.bottom !== false) { const c = cap(profile[0]); c.tris.forEach(t => tri(p, [...t[0], c.z], [...t[2], c.z], [...t[1], c.z])); }
-}
-function cyl(p, cx, cy, r, z0, z1, n = 32, o = {}) {
-  const pts = circlePts(cx, cy, r, n);
-  loft(p, [{ hard: true, pts: pts.map(q => [...q, z0]) }, { hard: true, pts: pts.map(q => [...q, z1]) }]);
-  if (o.top !== false) pts.forEach((q, i) => tri(p, [cx, cy, z1], [...q, z1], [...pts[(i + 1) % n], z1]));
-  if (o.bottom !== false) pts.forEach((q, i) => tri(p, [cx, cy, z0], [...pts[(i + 1) % n], z0], [...q, z0]));
-}
-// a profile (side, up) swept along a path of points, capped at both ends
-function sweep(p, pathPts, profile) {
-  const rings = pathPts.map((q, i) => {
-    const a = pathPts[Math.max(0, i - 1)], b = pathPts[Math.min(pathPts.length - 1, i + 1)];
-    const t = [b[0] - a[0], b[1] - a[1]], l = Math.hypot(...t);
-    const s = [-t[1] / l, t[0] / l];
-    // keep the section's width at the bends
-    let k = 1;
-    if (i > 0 && i < pathPts.length - 1) {
-      const u = [q[0] - a[0], q[1] - a[1]], v = [b[0] - q[0], b[1] - q[1]];
-      const cos = (u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v));
-      k = 1 / Math.cos(Math.acos(Math.max(-1, Math.min(1, cos))) / 2);
-    }
-    return { pts: profile.map(([x, y]) => [q[0] + s[0] * x * k, q[1] + s[1] * x * k, q[2] + y]) };
-  });
-  rings[0].hard = rings[rings.length - 1].hard = true;
-  loft(p, rings);
-  [rings[0].pts, rings[rings.length - 1].pts].forEach((ring, e) => {
-    const c = ring.reduce((m, q) => m.map((v, i) => v + q[i] / ring.length), [0, 0, 0]);
-    ring.forEach((q, i) => (e ? tri(p, c, q, ring[(i + 1) % ring.length]) : tri(p, c, ring[(i + 1) % ring.length], q)));
-  });
-}
-
 // ---------- the base ----------
 const KB_WELL = [-134.7, 134.7, -13.0, 99.2];
 const TP_HOLE = [-73.0, 73.0, -100.9, -19.9];
@@ -250,15 +37,6 @@ const TP_HOLE = [-73.0, 73.0, -100.9, -19.9];
 const topCase = part("Top Case", "topcase", "major");
 rrBody(topCase, 0, 0, HW, HH, R, [[0, 1.4, true], [0, 9.9], [0.3, 10.35], [0.6, DECK, true]], { bottom: false, holes: [KB_WELL, TP_HOLE] });
 // the keyboard well (walls and floor) and the trackpad opening (walls)
-function holeWalls(p, [x0, x1, y0, y1], z0, z1, floor) {
-  const c = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
-  c.forEach((a, i) => {
-    const b = c[(i + 1) % 4];
-    tri(p, [...a, z0], [...a, z1], [...b, z1]); tri(p, [...a, z0], [...b, z1], [...b, z0]);
-    line(p, [...a, z0], [...b, z0]); line(p, [...a, z0], [...a, z1]);
-  });
-  if (floor) rect(x0, x1, y0, y1).forEach(t => tri(p, [...t[0], z0], [...t[1], z0], [...t[2], z0]));
-}
 holeWalls(topCase, KB_WELL, 9.4, DECK, true);
 holeWalls(topCase, TP_HOLE, 9.4, DECK, false);
 
@@ -409,7 +187,6 @@ withFrame(lidF, () => {
 });
 
 // ---------- explode offsets, callouts and anchors ----------
-const r3 = v => v.map(c => Math.round(c * 1000) / 1000);
 const front = [0, -tc, ts], up = [0, ts, tc];
 const along = (a, b) => r3(front.map((f, i) => f * a + up[i] * b));
 const explode = {
@@ -449,64 +226,20 @@ const flow = {
 const screen = { module: "display", origin: L(-SCREEN.x, SCREEN.u0, -2.9), right: L(SCREEN.x, SCREEN.u0, -2.9),
   top: L(-SCREEN.x, SCREEN.u1 - SCREEN.notch[1], -2.9) };   // the 16:10 area below the notch and menu bar
 
-// ---------- pack ----------
-let vertexCount = 0, indexCount = 0;
-const objects = parts.map(p => {
-  if (p.v.length / 3 > 65535) throw new Error(p.name + " has too many vertices");
-  const o = { name: p.name, module: p.module, kind: p.kind, vStart: vertexCount, vCount: p.v.length / 3,
-    lCount: p.lines.length, tCount: p.tris.length, iStart: indexCount };
-  vertexCount += o.vCount; indexCount += o.lCount + o.tCount;
-  return o;
-});
-const buf = Buffer.alloc(vertexCount * 6 + indexCount * 2);
-let off = 0;
-parts.forEach(p => p.v.forEach(c => {
-  if (c < -32768 || c > 32767) throw new Error(p.name + " is out of range");
-  buf.writeInt16LE(c, off); off += 2;
-}));
-parts.forEach(p => p.lines.concat(p.tris).forEach(i => { buf.writeUInt16LE(i, off); off += 2; }));
-const G = { scale: SCALE, vertexCount, indexCount, objects, explode, hotspots, keys: keys.map(k => [...r3(k.slice(0, 4)), k[4]]),
+// ---------- page and gallery ----------
+const geometry = geometryScript("MBP_GEOMETRY", "macbookpro/build.js", { explode, hotspots, keys: keys.map(k => [...r3(k.slice(0, 4)), k[4]]),
   keyTop: KEY_TOP, touchpad: [0, -60.4, 145, 80], flow, screen,
-  constants: { BASE_HW: HW, BASE_HH: HH, DECK, LID_TILT, HINGE_Y, HINGE_Z } };
-const geometry = "// Generated by macbookpro/build.js. Do not edit.\nwindow.MBP_GEOMETRY = " + JSON.stringify(G) +
-  ";\nwindow.MBP_GEOMETRY.data = \"" + buf.toString("base64") + "\";\n";
-
-// ---------- the page: the Spectre page's chrome and engine, with this model's geometry and script ----------
-const galleryPath = path.join(REPO, "index.html");
-const gallery = read(galleryPath);
-const m = gallery.match(/\n(  const MODELS = )(\[.*\]);\n/);
-if (!m) throw new Error("no MODELS line in index.html");
-const models = JSON.parse(m[2]);
-const spectre = models.find(x => x.id === "spectre");
-if (!spectre) throw new Error("the Spectre page is the template and isn't in index.html");
-let html = spectre.html;
-const g0 = html.lastIndexOf("<script>", html.indexOf("window.SX_GEOMETRY"));
-const g1 = html.lastIndexOf("<script>", html.indexOf("// Blueprint model engine"));
-if (g0 < 0 || g1 < g0) throw new Error("unexpected Spectre page layout");
-const model = read(path.join(HERE, "model.js"));
-html = html.slice(0, g0) + "<script>\n" + geometry + "</script>\n<script>\n" + model + "</script>\n" + html.slice(g1);
-const swap = (re, to) => {
-  if (!re.test(html)) throw new Error("template text not found: " + re);
-  html = html.replace(re, to);
-};
-swap(/<title>[^<]*<\/title>/, "<title>MacBook Pro 14 (M5)</title>");
-swap(/(<canvas id="scene" aria-label=")[^"]*"/, "$1Line drawing of the 14-inch MacBook Pro with M5, open at 110 degrees; on hover the display, keyboard, trackpad, speakers, cooling, logic board, battery and bottom case slide apart\"");
-swap(/<a class="mark" href="#top">.*?<\/a>/, '<a class="mark" href="#top"><b>MacBook Pro</b><span>14-inch, M5</span></a>');
-swap(/<div class="dwg" aria-hidden="true">.*?<\/div>/,
-  '<div class="dwg" aria-hidden="true">DWG MBP14-M5-001 &middot; Rev A<br>Units mm &middot; View az 45&deg; / el 28&deg;<br>Concept page, not affiliated with Apple</div>');
+  constants: { BASE_HW: HW, BASE_HH: HH, DECK, LID_TILT, HINGE_Y, HINGE_Z } });
+// the Spectre page's chrome and engine, with this model's geometry and script
+const html = buildPage({ template: "spectre", geometry: geometry.js, model: read(path.join(HERE, "model.js")), swaps: [
+  [/<title>[^<]*<\/title>/, "<title>MacBook Pro 14 (M5)</title>"],
+  [/(<canvas id="scene" aria-label=")[^"]*"/, "$1Line drawing of the 14-inch MacBook Pro with M5, open at 110 degrees; on hover the display, keyboard, trackpad, speakers, cooling, logic board, battery and bottom case slide apart\""],
+  [/<a class="mark" href="#top">.*?<\/a>/, '<a class="mark" href="#top"><b>MacBook Pro</b><span>14-inch, M5</span></a>'],
+  [/<div class="dwg" aria-hidden="true">.*?<\/div>/,
+    '<div class="dwg" aria-hidden="true">DWG MBP14-M5-001 &middot; Rev A<br>Units mm &middot; View az 45&deg; / el 28&deg;<br>Concept page, not affiliated with Apple</div>'],
+] });
 fs.writeFileSync(path.join(HERE, "index.html"), html);
-
-// ---------- the gallery: in the Computers group, after the Spectre ----------
-// JSON as build_gallery.js writes it (Python's json.dumps style), so the rest of the file is unchanged
-const json = v => JSON.stringify(v)
-  .replace(/[\u0080-￿]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"))
-  .replace(/("(?:[^"\\]|\\.)*"|[^"]+)/g, t => t[0] === '"' ? t : t.replace(/,/g, ", ").replace(/:/g, ": "));
-const entry = { id: "macbookpro", label: "MacBook Pro 14 (M5)", kind: "laptop", tags: "laptop apple macbook pro m5 notebook 2025",
-  key: "mbp14-theme", category: "Computers", html };
-const list = models.filter(x => x.id !== entry.id);
-list.splice(list.findIndex(x => x.id === "spectre") + 1, 0, entry);
-const data = json(list).split("<").join("\\u003c");
-if (json(models).split("<").join("\\u003c") !== m[2]) throw new Error("index.html's MODELS wouldn't round-trip; not rewriting it");
-fs.writeFileSync(galleryPath, gallery.slice(0, m.index) + "\n" + m[1] + data + ";\n" + gallery.slice(m.index + m[0].length));
-console.log(`macbookpro/index.html ${(html.length / 1e6).toFixed(2)} MB, ${parts.length} parts, ${vertexCount} vertices, ${indexCount} indices; ` +
-  `index.html now has ${list.length} models`);
+// in the Computers group, after the Spectre
+const count = addToGallery({ id: "macbookpro", label: "MacBook Pro 14 (M5)", kind: "laptop", tags: "laptop apple macbook pro m5 notebook 2025",
+  key: "mbp14-theme", category: "Computers", html }, "spectre");
+console.log(`macbookpro/index.html ${(html.length / 1e6).toFixed(2)} MB, ${geometry.stats}; index.html now has ${count} models`);
