@@ -380,7 +380,6 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
     hotspots: G.hotspots.map(h => ({ t: h.t, s: h.s, p: h.p, o: h.o })),
     detail: DETAIL,
     tour: G.tour,
-    backdrop: ["#ffe4cc", "#f2985a"],
     materials: [
       [/Console Front Shell|Console Back Shell|Side Module/, ["paint", { color: 0xece4d6, roughness: 0.4, clearcoat: 0.3 }]],
       [/Controller Base|Controller Top/, ["alu", { color: 0xe8e3da, roughness: 0.26 }]], [/Plinth/, ["plastic", { color: 0xcfc8bc, roughness: 0.45 }]],
@@ -2209,8 +2208,9 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
   // window.__bpSetStyle("blueprint" | "realistic" | "photo"). "realistic" (Shaded) swaps the line drawing for
   // flat-coloured shaded parts in a soft studio. "photo" goes further: physical materials with surface texture
   // (plastic grain, brushed metal, circuit boards, clear-coated gloss), lit like a product photoshoot: a warm
-  // seamless backdrop (M.backdrop: [light, deep] colours, peach by default), a big soft key, a coloured rim
-  // light and a soft shadow on the backdrop's floor; the page's text turns dark to sit on it. Materials come from the model's own list (M.materials) first, then from
+  // seamless backdrop in the colours of the page's theme (LOOKS below), a big soft key, a coloured rim light and
+  // a soft shadow on the backdrop's floor; the page's text turns dark or light to sit on it. Surfaces carry
+  // high-resolution normal and roughness maps, sized in real millimetres. Materials come from the model's own list (M.materials) first, then from
   // each part's name.
   (function () {
     const P = {
@@ -2219,23 +2219,23 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
       steel:    { color: 0x9da2a8, metalness: 1, roughness: 0.3, tex: "brushed" },
       nickel:   { color: 0xc9cbce, metalness: 1, roughness: 0.22, tex: "brushed" },
       titanium: { color: 0xa7a59c, metalness: 1, roughness: 0.34, tex: "brushed" },
-      hot:      { color: 0x7d6655, metalness: 0.9, roughness: 0.45, tex: "grain" },
-      inconel:  { color: 0x8b8680, metalness: 1, roughness: 0.4, tex: "grain" },
+      hot:      { color: 0x7d6655, metalness: 0.9, roughness: 0.45, tex: "cast" },
+      inconel:  { color: 0x8b8680, metalness: 1, roughness: 0.4, tex: "cast" },
       copper:   { color: 0xc27a45, metalness: 1, roughness: 0.3, tex: "brushed" },
-      gold:     { color: 0xe0b44a, metalness: 1, roughness: 0.25 },
+      gold:     { color: 0xe0b44a, metalness: 1, roughness: 0.25, tex: "brushed" },
       pcb:      { color: 0x1d5a3a, metalness: 0.1, roughness: 0.55, tex: "pcb", clearcoat: 0.4 },
       chip:     { color: 0x1c1c1f, metalness: 0.2, roughness: 0.4, tex: "grain" },
       silicon:  { color: 0x3b4466, metalness: 0.7, roughness: 0.18 },
       ceramic:  { color: 0x9b7a4c, metalness: 0, roughness: 0.5, tex: "grain" },
       plastic:  { color: 0x232427, metalness: 0, roughness: 0.6, tex: "grain" },
-      gloss:    { color: 0x0d0e10, metalness: 0, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.04 },
-      rubber:   { color: 0x2c2c2e, metalness: 0, roughness: 0.85, tex: "grain" },
-      glass:    { color: 0x101318, metalness: 0.2, roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.02 },
-      clearGlass:{ color: 0x0b0d10, metalness: 0, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.02, opacity: 0.22 },
-      battery:  { color: 0x30343b, metalness: 0.3, roughness: 0.55, tex: "grain" },
+      gloss:    { color: 0x0d0e10, metalness: 0, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.04, tex: "peel" },
+      rubber:   { color: 0x2c2c2e, metalness: 0, roughness: 0.85, tex: "rubber" },
+      glass:    { color: 0x101318, metalness: 0.2, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.02, tex: "smudge" },
+      clearGlass:{ color: 0x0b0d10, metalness: 0, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.02, opacity: 0.22, tex: "smudge" },
+      battery:  { color: 0x30343b, metalness: 0.3, roughness: 0.55, tex: "foil" },
       beige:    { color: 0xd9d0b6, metalness: 0, roughness: 0.62, tex: "grain" },
       keycap:   { color: 0xc9bfa3, metalness: 0, roughness: 0.55, tex: "grain" },
-      paint:    { color: 0xe9eaeb, metalness: 0.1, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.15 },
+      paint:    { color: 0xe9eaeb, metalness: 0.1, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.15, tex: "peel" },
       greyPaint:{ color: 0x8e9196, metalness: 0.2, roughness: 0.5, tex: "grain" },
       composite:{ color: 0x2f3134, metalness: 0.2, roughness: 0.6, tex: "carbon" },
       other:    { color: 0xa0a5ab, metalness: 0.5, roughness: 0.45, tex: "grain" },
@@ -2322,86 +2322,168 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
     }
 
     // ---------- procedural surface textures for the photo style ----------
-    function canvasTex(size, draw, color) {
-      const c = document.createElement("canvas");
-      c.width = c.height = size;
-      draw(c.getContext("2d"), size);
+    // Generated once, at high resolution, when the Photo style is first used: colour where the surface has a
+    // pattern (circuit boards, carbon weave), and everywhere a normal map for the surface's relief (moulded
+    // plastic stipple, brushed-metal streaks, orange-peel paint, rubber, wrinkled battery foil) with a
+    // roughness map so highlights break up the way real surfaces do. Tiles are sized in real millimetres.
+    let rnd = 1234567;
+    const rand = () => ((rnd = (rnd * 16807) % 2147483647) / 2147483647);
+    const seed = v => { rnd = v; };
+    const TEX = {};
+    const toTex = (c, color) => {
       const t = new THREE.CanvasTexture(c);
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
       t.anisotropy = renderer.capabilities.getMaxAnisotropy();
       if (color) t.encoding = THREE.sRGBEncoding;
       return t;
+    };
+    function canvasTex(size, draw, color) {
+      const c = document.createElement("canvas");
+      c.width = c.height = size;
+      draw(c.getContext("2d"), size);
+      return toTex(c, color);
     }
-    let rnd = 1234567;
-    const rand = () => ((rnd = (rnd * 16807) % 2147483647) / 2147483647);
-    const TEX = {};
+    // tileable value noise: a lattice of random values with period `cells`, smoothly interpolated
+    function noise(size, cells, stretch) {
+      const cx = cells, cy = Math.max(1, Math.round(cells / (stretch || 1)));
+      const L = new Float32Array(cx * cy);
+      for (let i = 0; i < L.length; i++) L[i] = rand();
+      const out = new Float32Array(size * size), sm = t => t * t * (3 - 2 * t);
+      for (let y = 0; y < size; y++) {
+        const fy = y / size * cy, y0 = Math.floor(fy), ty = sm(fy - y0), y1 = (y0 + 1) % cy;
+        for (let x = 0; x < size; x++) {
+          const fx = x / size * cx, x0 = Math.floor(fx), tx = sm(fx - x0), x1 = (x0 + 1) % cx;
+          const a = L[y0 * cx + x0], b = L[y0 * cx + x1], c = L[y1 * cx + x0], d = L[y1 * cx + x1];
+          out[y * size + x] = (a + (b - a) * tx) + ((c + (d - c) * tx) - (a + (b - a) * tx)) * ty;
+        }
+      }
+      return out;
+    }
+    // octaves of noise added together: [cells, weight] pairs
+    function fbm(size, octaves, stretch) {
+      const out = new Float32Array(size * size);
+      octaves.forEach(([cells, w]) => { const n = noise(size, cells, stretch); for (let i = 0; i < out.length; i++) out[i] += n[i] * w; });
+      return out;
+    }
+    // a height field to a tangent-space normal map
+    function normalMap(h, size, k) {
+      const c = document.createElement("canvas"); c.width = c.height = size;
+      const g = c.getContext("2d"), im = g.createImageData(size, size), d = im.data;
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const l = h[y * size + (x + size - 1) % size], r = h[y * size + (x + 1) % size];
+        const u = h[((y + size - 1) % size) * size + x], dn = h[((y + 1) % size) * size + x];
+        let nx = (l - r) * k, ny = (dn - u) * k, nz = 1;
+        const len = Math.hypot(nx, ny, nz); nx /= len; ny /= len; nz /= len;
+        const i = (y * size + x) * 4;
+        d[i] = (nx * 0.5 + 0.5) * 255; d[i + 1] = (ny * 0.5 + 0.5) * 255; d[i + 2] = (nz * 0.5 + 0.5) * 255; d[i + 3] = 255;
+      }
+      g.putImageData(im, 0, 0);
+      return toTex(c);
+    }
+    // a height field to a roughness map: lo..hi (0-1) scales the material's own roughness
+    function greyMap(h, size, lo, hi) {
+      let mn = Infinity, mx = -Infinity;
+      for (let i = 0; i < h.length; i++) { if (h[i] < mn) mn = h[i]; if (h[i] > mx) mx = h[i]; }
+      const c = document.createElement("canvas"); c.width = c.height = size;
+      const g = c.getContext("2d"), im = g.createImageData(size, size), d = im.data;
+      for (let i = 0; i < h.length; i++) { const v = (lo + (hi - lo) * (h[i] - mn) / (mx - mn || 1)) * 255; d.set([v, v, v, 255], i * 4); }
+      g.putImageData(im, 0, 0);
+      return toTex(c);
+    }
+    // one tile's size in model units, from the drawing's units (the textures are designed in millimetres)
+    const UNIT_MM = (() => { const m = /Units\s+(mm|cm|m)\b/i.exec((document.querySelector(".dwg") || {}).textContent || ""); return m ? { mm: 1, cm: 10, m: 1000 }[m[1].toLowerCase()] : 1; })();
+    const tile = (t, mm) => { const r = 40 * UNIT_MM / mm; [t.map, t.normalMap, t.roughnessMap].forEach(x => x && x.repeat.set(r, r)); return t; };
     function textures(kind) {
       if (TEX[kind]) return TEX[kind];
+      seed(1234567 + kind.length * 7919);
       let t = {};
+      const S = 1024;
       if (kind === "grain") {
-        // fine moulded-plastic stipple: bump and a little roughness variation
-        const n = canvasTex(256, (g, s) => {
-          const d = g.createImageData(s, s);
-          for (let i = 0; i < s * s; i++) { const v = 118 + rand() * 20; d.data.set([v, v, v, 255], i * 4); }
-          g.putImageData(d, 0, 0);
-        });
-        n.repeat.set(10, 10);
-        t = { bumpMap: n, bumpScale: 0.004, roughnessMap: n };
+        // moulded plastic: a fine, even stipple with soft larger ripples under it
+        const h = fbm(S, [[256, 1], [128, 0.5], [32, 0.15]]);
+        t = tile({ normalMap: normalMap(h, S, 1.6), normalScale: 0.5, roughnessMap: greyMap(h, S, 0.82, 1) }, 18);
+      } else if (kind === "rubber") {
+        const h = fbm(S, [[160, 1], [80, 0.6], [20, 0.25]]);
+        t = tile({ normalMap: normalMap(h, S, 2.4), normalScale: 0.8, roughnessMap: greyMap(h, S, 0.85, 1) }, 22);
       } else if (kind === "brushed") {
-        // brushed metal: long fine streaks one way
-        const b = canvasTex(512, (g, s) => {
-          g.fillStyle = "#7a7a7a"; g.fillRect(0, 0, s, s);
-          for (let i = 0; i < 2600; i++) {
-            const y = rand() * s, v = Math.round(90 + rand() * 80);
-            g.strokeStyle = "rgba(" + v + "," + v + "," + v + "," + (0.15 + rand() * 0.25) + ")";
-            g.lineWidth = 0.5 + rand();
-            g.beginPath(); g.moveTo(0, y); g.lineTo(s, y + (rand() - 0.5) * 2); g.stroke();
-          }
-        });
-        b.repeat.set(3, 3);
-        t = { bumpMap: b, bumpScale: 0.002, roughnessMap: b };
+        // brushed metal: long fine streaks one way, a slight waviness across them
+        const h = fbm(S, [[512, 1], [256, 0.7], [96, 0.35], [24, 0.15]], 96);
+        t = tile({ normalMap: normalMap(h, S, 2), normalScale: 0.2, roughnessMap: greyMap(h, S, 0.78, 1) }, 30);
+      } else if (kind === "peel") {
+        // automotive-style paint: a soft orange-peel ripple under the clear coat
+        const h = fbm(S, [[48, 1], [24, 0.6], [96, 0.25]]);
+        t = tile({ normalMap: normalMap(h, S, 0.9), normalScale: 0.18, roughnessMap: greyMap(h, S, 0.88, 1), clearcoatNormal: true }, 40);
+      } else if (kind === "foil") {
+        // a battery's printed foil wrap: broad soft wrinkles
+        const h = fbm(S, [[12, 1], [24, 0.5], [64, 0.2]]);
+        t = tile({ normalMap: normalMap(h, S, 1.2), normalScale: 0.45, roughnessMap: greyMap(h, S, 0.6, 1) }, 60);
+      } else if (kind === "cast") {
+        // sand-cast iron under paint: pitted and lumpy
+        const h = fbm(S, [[200, 1], [64, 0.8], [16, 0.4]]);
+        t = tile({ normalMap: normalMap(h, S, 3), normalScale: 0.6, roughnessMap: greyMap(h, S, 0.75, 1) }, 30);
+      } else if (kind === "smudge") {
+        // glass: faint fingerprints and wipe marks in the highlights
+        const h = fbm(S, [[6, 1], [14, 0.6], [40, 0.3]]);
+        t = tile({ roughnessMap: greyMap(h, S, 0.2, 1) }, 90);
       } else if (kind === "pcb") {
-        // solder mask over copper traces, vias and gold pads
-        const c = canvasTex(1024, (g, s) => {
-          g.fillStyle = "#1f5c3b"; g.fillRect(0, 0, s, s);
-          g.lineCap = "round";
-          for (let i = 0; i < 420; i++) {
+        // solder mask over copper traces, vias, gold pads and silkscreen, with the copper raised under the mask
+        const P = 2048;
+        const draw = (g, s, relief) => {
+          seed(424242);
+          g.fillStyle = relief ? "#404040" : "#1d5a39"; g.fillRect(0, 0, s, s);
+          g.lineCap = g.lineJoin = "round";
+          for (let i = 0; i < 1400; i++) {
             let x = rand() * s, y = rand() * s;
-            g.strokeStyle = "rgba(70,140,90," + (0.5 + rand() * 0.4) + ")";
-            g.lineWidth = 1.5 + rand() * 3;
+            g.strokeStyle = relief ? "#8a8a8a" : "rgba(64,138,88," + (0.55 + rand() * 0.35) + ")";
+            g.lineWidth = 1.5 + rand() * 3.5;
             g.beginPath(); g.moveTo(x, y);
-            for (let k = 0; k < 4; k++) {
-              const len = 20 + rand() * 120, dir = Math.floor(rand() * 4);
-              x += dir === 0 ? len : dir === 1 ? -len : (dir === 2 ? len : -len) * 0.7;
-              y += dir < 2 ? (rand() < 0.5 ? len * 0.7 : 0) : len * (dir === 2 ? 1 : -1) * 0.5;
-              g.lineTo(x, y);
+            for (let k = 0; k < 5; k++) {
+              const len = 10 + rand() * 90, dir = Math.floor(rand() * 8), a = dir * Math.PI / 4;
+              x += Math.cos(a) * len; y += Math.sin(a) * len; g.lineTo(x, y);
             }
             g.stroke();
           }
-          for (let i = 0; i < 900; i++) {
-            const x = rand() * s, y = rand() * s;
-            g.fillStyle = rand() < 0.3 ? "#d8b55a" : "#6a8f70";
-            g.beginPath(); g.arc(x, y, 1.5 + rand() * 2.5, 0, Math.PI * 2); g.fill();
+          for (let i = 0; i < 260; i++) {   // component pads in rows
+            const x = rand() * s, y = rand() * s, n = 2 + Math.floor(rand() * 8), w = 3 + rand() * 5, gap = w * 2.2, v = rand() < 0.5;
+            g.fillStyle = relief ? "#b0b0b0" : "#d9b45c";
+            for (let k = 0; k < n; k++) g.fillRect(x + (v ? 0 : k * gap), y + (v ? k * gap : 0), v ? w * 2 : w, v ? w : w * 2);
           }
-          for (let i = 0; i < 160; i++) {
-            g.fillStyle = "#e7e3d4";
-            g.font = "10px monospace";
-            g.fillText(["R", "C", "U", "Q", "L"][Math.floor(rand() * 5)] + Math.floor(rand() * 400), rand() * s, rand() * s);
+          for (let i = 0; i < 2200; i++) {   // vias
+            const x = rand() * s, y = rand() * s, r = 1.6 + rand() * 2.4;
+            g.fillStyle = relief ? "#a0a0a0" : "#c9a64f"; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+            g.fillStyle = relief ? "#202020" : "#0d2a1b"; g.beginPath(); g.arc(x, y, r * 0.45, 0, Math.PI * 2); g.fill();
           }
-        }, true);
-        c.repeat.set(1.5, 1.5);
-        t = { map: c, colorOnly: true };
+          if (!relief) {
+            g.fillStyle = "#ece8da"; g.font = "600 13px monospace";
+            for (let i = 0; i < 320; i++) g.fillText(["R", "C", "U", "Q", "L", "D", "J"][Math.floor(rand() * 7)] + Math.floor(rand() * 900), rand() * s, rand() * s);
+            g.strokeStyle = "#ece8da"; g.lineWidth = 1.4;
+            for (let i = 0; i < 120; i++) { const w = 20 + rand() * 80, hh = 12 + rand() * 50; g.strokeRect(rand() * s, rand() * s, w, hh); }
+          }
+        };
+        const col = canvasTex(P, (g, s) => draw(g, s, false), true);
+        const hc = document.createElement("canvas"); hc.width = hc.height = P;
+        draw(hc.getContext("2d"), P, true);
+        const hd = hc.getContext("2d").getImageData(0, 0, P, P).data, h = new Float32Array(P * P);
+        for (let i = 0; i < h.length; i++) h[i] = hd[i * 4] / 255;
+        t = tile({ map: col, colorOnly: true, normalMap: normalMap(h, P, 1.4), normalScale: 0.5, roughnessMap: greyMap(h.map(v => 1 - v), P, 0.45, 1) }, 80);
       } else if (kind === "carbon") {
-        const c = canvasTex(256, (g, s) => {
-          const q = s / 8;
-          for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
-            const grd = (x + y) % 2 ? g.createLinearGradient(x * q, 0, x * q + q, 0) : g.createLinearGradient(0, y * q, 0, y * q + q);
-            grd.addColorStop(0, "#2a2c2f"); grd.addColorStop(0.5, "#4a4d52"); grd.addColorStop(1, "#2a2c2f");
-            g.fillStyle = grd; g.fillRect(x * q, y * q, q, q);
+        // twill weave: the colour and the bundles' relief
+        const q = 64;
+        const col = canvasTex(512, (g, s) => {
+          for (let y = 0; y < s / q * 2; y++) for (let x = 0; x < s / q; x++) {
+            const sx = x * q, sy = y * q / 2, horiz = (x + y) % 4 < 2;
+            const grd = horiz ? g.createLinearGradient(0, sy, 0, sy + q / 2) : g.createLinearGradient(sx, 0, sx + q, 0);
+            grd.addColorStop(0, "#1e2023"); grd.addColorStop(0.5, "#50545a"); grd.addColorStop(1, "#1e2023");
+            g.fillStyle = grd; g.fillRect(sx, sy, q, q / 2);
           }
         }, true);
-        c.repeat.set(6, 6);
-        t = { map: c, colorOnly: true };
+        const h = new Float32Array(512 * 512);
+        for (let y = 0; y < 512; y++) for (let x = 0; x < 512; x++) {
+          const cx = Math.floor(x / q), cy = Math.floor(y / (q / 2)), horiz = (cx + cy) % 4 < 2;
+          const u = horiz ? (y % (q / 2)) / (q / 2) : (x % q) / q;
+          h[y * 512 + x] = Math.sin(u * Math.PI);
+        }
+        t = tile({ map: col, colorOnly: true, normalMap: normalMap(h, 512, 1.5), normalScale: 0.6 }, 16);
       }
       return (TEX[kind] = t);
     }
@@ -2461,7 +2543,42 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
     }
 
     // ---------- photo: physical materials, textures, soft shadows on an invisible floor ----------
-    let floor = null, sun = null, contact = null, backdrop = null;
+    let floor = null, sun = null, contact = null, backdrop = null, rim = null, kick = null, hemi = null, lookKey = "";
+    // the backdrop follows the page's theme: each swatch (and its inverted side) has its own set
+    const LOOKS = {
+      dark: ["#4a4c52", "#121315", true], "dark:inv": ["#ffffff", "#d9dade"],
+      light: ["#ffffff", "#e3ddd5"], "light:inv": ["#4a4c52", "#121315", true],
+      amber: ["#ffe3cb", "#f29a5e"], "amber:inv": ["#5a3a1c", "#160d06", true],
+      navy: ["#3d6ea8", "#0a1f3c", true], "navy:inv": ["#f4f8fd", "#c4d5ea"],
+      lime: ["#effcc6", "#a8d64a"], "lime:inv": ["#2f7346", "#0a2414", true],
+    };
+    function currentLook() {
+      const t = root.getAttribute("data-theme") || "dark", bgInline = root.style.getPropertyValue("--bg").trim().toLowerCase();
+      const inv = THEMES[t] && bgInline && bgInline !== THEMES[t][0].toLowerCase();
+      return (t + (inv ? ":inv" : "")) in LOOKS ? t + (inv ? ":inv" : "") : "amber";
+    }
+    // the set for the current theme: backdrop, the studio reflected in the model, the coloured lights, the page's ink
+    function look() {
+      const k = currentLook();
+      if (k === lookKey) return;
+      lookKey = k;
+      const [l, d, dark] = LOOKS[k], light = new THREE.Color(l), deep = new THREE.Color(d);
+      if (photoEnv) photoEnv.dispose();
+      photoEnv = studio([
+        [0, 4.9, 0, 7, 7, 3.2], [-4.9, 2.2, 1.2, 2.2, 7, 2.4], [4.9, 2.2, -0.8, 2.2, 7, 1.8],
+        [0, -4.9, 0, 9, 9, dark ? 0.35 : 0.55, light.getHex()], [1.5, 1.5, 4.9, 4, 3, 0.9, light.getHex()], [-2, 1, -4.9, 8, 6, 0.9, deep.getHex()],
+      ], deep.clone().multiplyScalar(0.45).getHex());
+      if (backdrop) backdrop.dispose();
+      backdrop = backdropTexture([light, deep]);
+      rim.color.copy(dark ? light.clone().lerp(new THREE.Color(0xffffff), 0.5) : deep.clone().lerp(new THREE.Color(0xffffff), 0.25));
+      kick.color.copy(light);
+      hemi.color.copy(light); hemi.groundColor.copy(deep);
+      root.classList.toggle("bp-photo-dark", !!dark);
+      if (style === "photo") { scene.environment = photoEnv; scene.background = backdrop; }
+    }
+    // a theme change while in the Photo style re-dresses the set
+    const recolorBase = window.__bpRecolor;
+    window.__bpRecolor = () => { recolorBase(); if (photoBuilt) look(); };
     // the seamless paper: lighter round the model and towards the light, deepening to the corners
     function backdropTexture([light, deep]) {
       const c = document.createElement("canvas"); c.width = c.height = 1024;
@@ -2485,6 +2602,8 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
     const photoCss = document.createElement("style");
     photoCss.textContent = "html.bp-photo{--bg:#fff3e8!important;--fg:#22180f!important;--fg-2:rgba(34,24,15,.7)!important;--fg-3:rgba(34,24,15,.48)!important;" +
       "--rule:rgba(34,24,15,.2)!important;--panel:rgba(255,244,234,.72)!important;--grid:transparent!important;color-scheme:light}" +
+      "html.bp-photo.bp-photo-dark{--bg:#141414!important;--fg:#f6f3ef!important;--fg-2:rgba(246,243,239,.7)!important;--fg-3:rgba(246,243,239,.46)!important;" +
+      "--rule:rgba(246,243,239,.2)!important;--panel:rgba(20,20,20,.62)!important;color-scheme:dark}" +
       "html.bp-photo .sheet{opacity:0}";
     document.head.appendChild(photoCss);
     function buildPhoto() {
@@ -2498,7 +2617,11 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
           clearcoat: sp.clearcoat || 0, clearcoatRoughness: sp.clearcoatRoughness !== undefined ? sp.clearcoatRoughness : 0.1,
           envMapIntensity: sp.env !== undefined ? sp.env : 0.9 };
         if (tx.map) o.map = tx.map;
-        if (tx.bumpMap) { o.bumpMap = tx.bumpMap; o.bumpScale = tx.bumpScale * (sp.bump !== undefined ? sp.bump : 1); }
+        if (tx.normalMap) {
+          const k = tx.normalScale * (sp.bump !== undefined ? sp.bump : 1);
+          o.normalMap = tx.normalMap; o.normalScale = new THREE.Vector2(k, -k);
+          if (tx.clearcoatNormal && o.clearcoat) { o.clearcoatNormalMap = tx.normalMap; o.clearcoatNormalScale = new THREE.Vector2(k * 0.6, -k * 0.6); }
+        }
         if (tx.roughnessMap) o.roughnessMap = tx.roughnessMap;
         if (sp.emissive) { o.emissive = sp.emissive; o.emissiveIntensity = sp.emissiveIntensity || 1; }
         if (sp.opacity !== undefined) { o.transparent = true; o.opacity = sp.opacity; o.depthWrite = sp.opacity > 0.6; }
@@ -2514,15 +2637,7 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
         m.add(r);
         photos.push({ r, mat, entry: byName[m.name] });
       });
-      // a product studio inside the backdrop's colour: a big overhead softbox, two strip lights, the warm
-      // backdrop bouncing light back from below and behind, so glossy parts reflect the set they sit in
-      const BD = (M.backdrop || ["#ffe3cb", "#f29a5e"]).map(c => new THREE.Color(c));
-      const deep = BD[1].getHex(), light = BD[0].getHex();
-      photoEnv = studio([
-        [0, 4.9, 0, 7, 7, 3.2], [-4.9, 2.2, 1.2, 2.2, 7, 2.4], [4.9, 2.2, -0.8, 2.2, 7, 1.8],
-        [0, -4.9, 0, 9, 9, 0.55, light], [1.5, 1.5, 4.9, 4, 3, 0.9, light], [-2, 1, -4.9, 8, 6, 0.9, deep],
-      ], new THREE.Color(deep).multiplyScalar(0.45).getHex());
-      backdrop = backdropTexture(BD);
+
       // the sun casts the shadows; it turns with the model so they stay put under it
       sun = new THREE.DirectionalLight(0xfff3e6, 1.7);
       const R = rE * 1.25, c = cA.clone().add(cE).multiplyScalar(0.5);
@@ -2539,10 +2654,10 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
       // a soft key from the viewer's side, a rim in the backdrop's colour from behind and a kicker from the
       // other side, so edges catch a warm glow and dark parts keep their shape
       const key = new THREE.DirectionalLight(0xffffff, 0.75); key.position.set(0.5, 0.6, 0.8);
-      const rim = new THREE.DirectionalLight(new THREE.Color(deep).lerp(new THREE.Color(0xffffff), 0.25), 1.4); rim.position.set(0.7, 0.4, -1);
-      const kick = new THREE.DirectionalLight(new THREE.Color(light), 0.5); kick.position.set(-0.9, 0.1, -0.3);
+      rim = new THREE.DirectionalLight(0xffffff, 1.4); rim.position.set(0.7, 0.4, -1);
+      kick = new THREE.DirectionalLight(0xffffff, 0.5); kick.position.set(-0.9, 0.1, -0.3);
       [key, rim, kick].forEach(l => { camera.add(l); camera.add(l.target); l.target.position.set(0, 0, -1); });
-      const hemi = new THREE.HemisphereLight(light, deep, 0.35);
+      hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.35);
       scene.add(hemi);
       floor = new THREE.Mesh(new THREE.PlaneGeometry(rE * 12, rE * 12), new THREE.ShadowMaterial({ opacity: 0.16 }));
       floor.rotation.x = -Math.PI / 2;
@@ -2561,6 +2676,7 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
       model.add(contact);
       photoLights.push(sun, key, rim, kick, hemi, floor, contact);
       photoLights.forEach(l => { l.visible = false; });
+      look();
     }
 
     function apply() {
