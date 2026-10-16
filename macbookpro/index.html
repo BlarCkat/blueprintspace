@@ -1657,6 +1657,75 @@ window.MBP_GEOMETRY.data = "yvMa+BwA0PPp9xwA0PPp98YAyvMa+MYA4/O79xwA4/O798YAAvSU
   setXray(xray);
   if (xrayBtn) xrayBtn.addEventListener("click", () => setXray(!xray));
 
+  // ---------- views: preset angles, and a saved view that every model opens in ----------
+  // A view is absolute: the angle round the model and the height it's seen from (degrees) and the zoom, so a
+  // view saved on one model frames every other model the same way. Turning the model by `yaw` moves the camera
+  // the other way round it, and tilting it by `pitch` raises the camera. While a view is saved, it follows
+  // whatever you turn to, and other models open in it; Save view again forgets it.
+  const VIEW_KEY = "bp-view", PRESETS = [30, 45, 90];
+  const rad = THREE.MathUtils.degToRad, deg = THREE.MathUtils.radToDeg, round1 = v => Math.round(v * 10) / 10;
+  const wrap360 = a => ((a % 360) + 360) % 360;
+  const viewNow = () => ({ az: round1(wrap360(V.az - deg(drag.tYaw))), el: round1(V.el + deg(drag.tPitch)), zoom: round1(zoom * 100) / 100 });
+  function applyView(v, snap) {
+    // the shortest way round to the new angle
+    const target = rad(V.az - v.az), d = ((target - drag.tYaw) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+    drag.tYaw += d;
+    drag.tPitch = Math.max(PITCH[0], Math.min(PITCH[1], rad(v.el - V.el)));
+    if (v.zoom) zoom = Math.max(0.45, Math.min(2.2, v.zoom));
+    if (snap) { drag.yaw = drag.tYaw; drag.pitch = drag.tPitch; }
+  }
+  const viewCss = document.createElement("style");
+  viewCss.textContent = `
+    .viewbar { position: fixed; z-index: 5; left: var(--gutter); display: flex; flex-direction: column; gap: 4px; padding: 4px;
+      border: 1px solid var(--rule); border-radius: 22px; background: var(--panel); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    .viewbar button { font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-2); background: transparent;
+      border: 0; border-radius: 999px; min-width: 52px; padding: 10px 8px; cursor: pointer; transition: background-color .2s, color .2s; }
+    .viewbar button:hover { color: var(--fg); }
+    .viewbar button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+    .viewbar button:focus-visible { outline: 1px dashed var(--fg); outline-offset: 1px; }
+    .viewbar hr { width: 70%; margin: 2px auto; border: 0; border-top: 1px solid var(--rule); }
+    .viewbar .vb-k { font: 500 9px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-3); text-align: center; padding: 6px 0 2px; }
+    .zoomed .viewbar, .flowing .viewbar { opacity: .3; }
+    @media (max-width: 760px) { .viewbar button { min-width: 44px; padding: 9px 6px; } }`;
+  document.head.appendChild(viewCss);
+  const viewbar = document.createElement("div");
+  viewbar.className = "viewbar"; viewbar.setAttribute("role", "group"); viewbar.setAttribute("aria-label", "View");
+  viewbar.innerHTML = '<div class="vb-k">View</div>' +
+    PRESETS.map(a => `<button type="button" data-az="${a}" aria-pressed="false" title="See it from ${a}° round">${a}°</button>`).join("") +
+    '<hr><button type="button" class="vb-save" aria-pressed="false">Save</button>';
+  document.body.appendChild(viewbar);
+  const saveBtn = viewbar.querySelector(".vb-save"), presetBtns = [...viewbar.querySelectorAll("[data-az]")];
+  // sits under the header, however many rows the header wraps to
+  function placeViewbar() {
+    const h = document.querySelector("header");
+    viewbar.style.top = Math.round((h ? h.getBoundingClientRect().bottom : 70) + 14) + "px";
+  }
+  addEventListener("resize", placeViewbar);
+  new MutationObserver(placeViewbar).observe(document.querySelector("header") || document.body, { childList: true, subtree: true });
+  placeViewbar();
+  let savedView = null;
+  try { savedView = JSON.parse(localStorage.getItem(VIEW_KEY) || "null"); } catch (e) {}
+  function setSaved(v) {
+    savedView = v;
+    saveBtn.setAttribute("aria-pressed", String(!!v));
+    saveBtn.textContent = v ? "Saved" : "Save";
+    saveBtn.title = v ? "This view is savedView: other models open in it. Click to forget it" : "Save this view: other models open in it";
+    try { v ? localStorage.setItem(VIEW_KEY, JSON.stringify(v)) : localStorage.removeItem(VIEW_KEY); } catch (e) {}
+  }
+  if (savedView && typeof savedView.az === "number") applyView(savedView, true);
+  setSaved(savedView && typeof savedView.az === "number" ? savedView : null);
+  presetBtns.forEach(b => b.addEventListener("click", e => {
+    e.stopPropagation();
+    applyView({ az: +b.dataset.az, el: V.el + deg(drag.tPitch) });
+  }));
+  saveBtn.addEventListener("click", e => { e.stopPropagation(); setSaved(savedView ? null : viewNow()); });
+  // keep the savedView view up to date with the one on screen, and light the preset it matches
+  setInterval(() => {
+    const v = viewNow();
+    presetBtns.forEach(b => b.setAttribute("aria-pressed", String(Math.abs(((v.az - b.dataset.az) % 360 + 540) % 360 - 180) < 0.5)));
+    if (savedView && (v.az !== savedView.az || v.el !== savedView.el || v.zoom !== savedView.zoom)) setSaved(v);
+  }, 300);
+
   // ---------- your own photo or video on the screen (models with a screen) ----------
   // The picture fills the screen's active area (cropped to fit, rounded corners kept) in every render style
   // and in the exports. It's only held in this page; nothing is uploaded.
