@@ -404,7 +404,12 @@ window.RC_GEOMETRY.data = "AAAAAHT/NAAOAH//NgAAAH//LgAbAH//JgAmAH//GwAuAH//DgA0A
   // a new swatch switches theme; the active one again flips its background and lines
   swatches.forEach(b => b.addEventListener("click", () => applyTheme(b.dataset.t, b.dataset.t === theme ? !inverted : false)));
 
-  if (touchMode && M.touchHint) document.getElementById("hint").textContent = M.touchHint + "; drag to turn it, pinch to zoom.";
+  const HINT0 = (document.getElementById("hint") || {}).innerHTML || "";   // the page's own hint, before a touch hint replaces it
+  if (touchMode && M.touchHint) document.getElementById("hint").textContent = M.touchHint + "; drag to turn it, pinch to zoom, two fingers to pan.";
+  else {
+    const hint = document.getElementById("hint");
+    if (hint) hint.innerHTML = hint.innerHTML.replace("to rotate,", "to rotate, drag empty space to pan,");
+  }
 
   if (!window.THREE) return;
 
@@ -996,13 +1001,21 @@ window.RC_GEOMETRY.data = "AAAAAHT/NAAOAH//NgAAAH//LgAbAH//JgAmAH//GwAuAH//DgA0A
   const camTarget = new THREE.Vector3(), camCur = { t: new THREE.Vector3(), d: 0, init: false };
   const tmpFocus = new THREE.Vector3();
   let zoom = 1;   // zoom from the keyboard (+ / -), a pinch or the wheel
+  // pan: the camera's target moved across the screen, in model radii (x right, y up)
+  const pan = { x: 0, y: 0 };
+  const panRight = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
+  const panUp = new THREE.Vector3().crossVectors(dir, panRight);
   // normal framing follows the explode amount; in "how it works" or on a part the camera zooms onto it
   function placeCamera(e, dt) {
     camTarget.lerpVectors(cA, cE, e).sub(mid);
     let d = (dA + (dE - dA) * e) * zoom;
     const z = flow.focus(tmpFocus);
     if (z) { camTarget.copy(tmpFocus); d = dA * z; }
-    else { const r = detail.focus(tmpFocus); if (r) { camTarget.copy(tmpFocus); d = r * 1.5 / fitSin; } }
+    else {
+      const r = detail.focus(tmpFocus);
+      if (r) { camTarget.copy(tmpFocus); d = r * 1.5 / fitSin; }
+      else camTarget.addScaledVector(panRight, pan.x * rA).addScaledVector(panUp, pan.y * rA);
+    }
     if (!camCur.init) { camCur.t.copy(camTarget); camCur.d = d; camCur.init = true; }
     const k = reduceMotion ? 1 : 1 - Math.exp(-dt * 3);
     camCur.t.lerp(camTarget, k);
@@ -1051,15 +1064,16 @@ window.RC_GEOMETRY.data = "AAAAAHT/NAAOAH//NgAAAH//LgAbAH//JgAmAH//GwAuAH//DgA0A
   // ---------- touch: one finger turns the model, two fingers pinch to zoom; the wheel zooms too ----------
   // A finger only starts turning once it has moved, so a tap still opens the model and picks parts.
   const touches = new Map();
-  let pinch = 0, touchTurned = false;
+  let pinch = 0, touchTurned = false, between = null;
   const spread = () => { const [a, b] = [...touches.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0; };
+  const midway = () => { const [a, b] = [...touches.values()]; return a && b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : null; };
   const zoomBy = f => { zoom = Math.max(0.45, Math.min(2.2, zoom * f)); };
   canvas.addEventListener("pointerdown", e => {
     if (e.pointerType !== "touch") return;
     if (!touches.size) touchTurned = false;
     touches.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
     canvas.setPointerCapture(e.pointerId);
-    pinch = spread();
+    pinch = spread(); between = midway();
   });
   canvas.addEventListener("pointermove", e => {
     const t = touches.get(e.pointerId);
@@ -1073,14 +1087,15 @@ window.RC_GEOMETRY.data = "AAAAAHT/NAAOAH//NgAAAH//LgAbAH//JgAmAH//GwAuAH//DgA0A
       drag.tPitch = Math.max(PITCH[0], Math.min(PITCH[1], drag.tPitch + dy * 0.006));
     } else {
       touchTurned = true;
-      const s = spread();
+      const s = spread(), m = midway();
       if (pinch && s) zoomBy(pinch / s);
-      pinch = s;
+      if (between && m) panBy(m.x - between.x, m.y - between.y);
+      pinch = s; between = m;
     }
   });
   const endTouch = e => {
     if (!touches.delete(e.pointerId)) return;
-    pinch = spread();
+    pinch = spread(); between = midway();
     // the finger left on the glass carries on turning from where it is, without a jump
     touches.forEach(t => { t.x0 = t.x; t.y0 = t.y; });
   };
@@ -1142,6 +1157,42 @@ window.RC_GEOMETRY.data = "AAAAAHT/NAAOAH//NgAAAH//LgAbAH//JgAmAH//GwAuAH//DgA0A
   canvas.addEventListener("click", e => {
     if (partDrag.justDragged) { partDrag.justDragged = false; e.stopImmediatePropagation(); }
   }, true);
+
+  // ---------- pan: drag empty space with the mouse, or middle-drag anywhere (two fingers on a touch screen) ----------
+  // The model follows the pointer across the screen. A press that doesn't move is still a click.
+  const panDrag = { down: false, on: false, id: null, x: 0, y: 0, just: false };
+  const clampPan = v => Math.max(-3, Math.min(3, v));
+  function panBy(dx, dy) {
+    const perPx = 2 * camCur.d * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / innerHeight / rA;
+    pan.x = clampPan(pan.x - dx * perPx);
+    pan.y = clampPan(pan.y + dy * perPx);
+  }
+  canvas.addEventListener("mousedown", e => { if (e.button === 1) e.preventDefault(); });   // no autoscroll
+  canvas.addEventListener("pointerdown", e => {
+    if (e.pointerType !== "mouse" || (e.button !== 0 && e.button !== 1)) return;
+    if (e.button === 0 && partDrag.down) return;   // on a part, that's the part's drag
+    panDrag.down = true; panDrag.on = e.button === 1; panDrag.id = e.pointerId; panDrag.x = e.clientX; panDrag.y = e.clientY;
+    if (panDrag.on) { canvas.setPointerCapture(e.pointerId); canvas.classList.add("dragging"); }
+  });
+  canvas.addEventListener("pointermove", e => {
+    if (!panDrag.down || e.pointerId !== panDrag.id) return;
+    if (!panDrag.on) {
+      if (Math.hypot(e.clientX - panDrag.x, e.clientY - panDrag.y) < 5) return;
+      panDrag.on = true;
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add("dragging");
+    }
+    panBy(e.clientX - panDrag.x, e.clientY - panDrag.y);
+    panDrag.x = e.clientX; panDrag.y = e.clientY;
+  });
+  const endPan = e => {
+    if (!panDrag.down || e.pointerId !== panDrag.id) return;
+    if (panDrag.on) { panDrag.just = true; canvas.classList.remove("dragging"); }
+    panDrag.down = panDrag.on = false;
+  };
+  canvas.addEventListener("pointerup", endPan);
+  canvas.addEventListener("pointercancel", endPan);
+  canvas.addEventListener("click", e => { if (panDrag.just) { panDrag.just = false; e.stopImmediatePropagation(); } }, true);
   const partList = Object.values(partGroups);
   let resetUntil = 0;
   function settleParts(k) {
@@ -1186,7 +1237,7 @@ window.RC_GEOMETRY.data = "AAAAAHT/NAAOAH//NgAAAH//LgAbAH//JgAmAH//GwAuAH//DgA0A
     } else if (k === "+" || k === "=") { zoom = Math.max(0.45, zoom / 1.15); }
     else if (k === "-" || k === "_") { zoom = Math.min(2.2, zoom * 1.15); }
     else if (k === "r" || k === "R") {
-      drag.tYaw = drag.tPitch = 0; zoom = 1; partIdx = -1;
+      drag.tYaw = drag.tPitch = 0; zoom = 1; pan.x = pan.y = 0; partIdx = -1;
       resetUntil = performance.now() + 1500;
       if (detail.mesh) zoomTo(null);
       tapped = null; refresh();
@@ -1222,20 +1273,22 @@ window.RC_GEOMETRY.data = "AAAAAHT/NAAOAH//NgAAAH//LgAbAH//JgAmAH//GwAuAH//DgA0A
   if (xrayBtn) xrayBtn.addEventListener("click", () => setXray(!xray));
 
   // ---------- views: preset angles, and a saved view that every model opens in ----------
-  // A view is absolute: the angle round the model and the height it's seen from (degrees) and the zoom, so a
+  // A view is absolute: the angle round the model and the height it's seen from (degrees), the zoom and the pan, so a
   // view saved on one model frames every other model the same way. Turning the model by `yaw` moves the camera
   // the other way round it, and tilting it by `pitch` raises the camera. While a view is saved, it follows
   // whatever you turn to, and other models open in it; Save view again forgets it.
   const VIEW_KEY = "bp-view", PRESETS = [30, 45, 90];
   const rad = THREE.MathUtils.degToRad, deg = THREE.MathUtils.radToDeg, round1 = v => Math.round(v * 10) / 10;
   const wrap360 = a => ((a % 360) + 360) % 360;
-  const viewNow = () => ({ az: round1(wrap360(V.az - deg(drag.tYaw))), el: round1(V.el + deg(drag.tPitch)), zoom: round1(zoom * 100) / 100 });
+  const viewNow = () => ({ az: round1(wrap360(V.az - deg(drag.tYaw))), el: round1(V.el + deg(drag.tPitch)), zoom: round1(zoom * 100) / 100,
+    panX: Math.round(pan.x * 1000) / 1000, panY: Math.round(pan.y * 1000) / 1000 });
   function applyView(v, snap) {
     // the shortest way round to the new angle
     const target = rad(V.az - v.az), d = ((target - drag.tYaw) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
     drag.tYaw += d;
     drag.tPitch = Math.max(PITCH[0], Math.min(PITCH[1], rad(v.el - V.el)));
     if (v.zoom) zoom = Math.max(0.45, Math.min(2.2, v.zoom));
+    if (typeof v.panX === "number") { pan.x = clampPan(v.panX); pan.y = clampPan(v.panY || 0); }
     if (snap) { drag.yaw = drag.tYaw; drag.pitch = drag.tPitch; }
   }
   const viewCss = document.createElement("style");
@@ -1287,8 +1340,80 @@ window.RC_GEOMETRY.data = "AAAAAHT/NAAOAH//NgAAAH//LgAbAH//JgAmAH//GwAuAH//DgA0A
   setInterval(() => {
     const v = viewNow();
     presetBtns.forEach(b => b.setAttribute("aria-pressed", String(Math.abs(((v.az - b.dataset.az) % 360 + 540) % 360 - 180) < 0.5)));
-    if (savedView && (v.az !== savedView.az || v.el !== savedView.el || v.zoom !== savedView.zoom)) setSaved(v);
+    if (savedView && JSON.stringify(v) !== JSON.stringify(savedView)) setSaved(v);
   }, 300);
+
+  // ---------- the screen animation, from a button: what "/" does, for touch screens with no keyboard ----------
+  // Models with one say so in their hint (or set M.screenAnimation); the button sends the same key press.
+  const toolsEl = document.querySelector(".tools");
+  if (toolsEl && (M.screenAnimation || /for the screen/.test(HINT0))) {
+    const anim = document.createElement("button");
+    anim.type = "button"; anim.className = "tool"; anim.id = "animate"; anim.textContent = "Animate";
+    anim.setAttribute("aria-pressed", "false"); anim.title = "Play the screen's animation (/)";
+    let playing = false;
+    const press = () => document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "/", code: "Slash", bubbles: true }));
+    anim.addEventListener("click", e => { e.stopPropagation(); press(); });
+    // the key itself toggles it too, so the button follows either
+    addEventListener("keydown", e => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, [contenteditable]"))) return;
+      playing = !playing; anim.setAttribute("aria-pressed", String(playing));
+    });
+    toolsEl.insertBefore(anim, document.getElementById("xray") || toolsEl.firstChild);
+    const css = document.createElement("style");
+    css.textContent = "#animate[aria-pressed=\"true\"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }";
+    document.head.appendChild(css);
+  }
+
+  // ---------- pan pad: arrows that move the view, held to keep moving, and a button that centres it ----------
+  // An arrow moves the view that way (so the model slides the other way); Alt + arrow keys do the same.
+  const padCss = document.createElement("style");
+  padCss.textContent = `
+    .panpad { position: fixed; z-index: 5; left: var(--gutter); display: grid; grid-template-columns: repeat(3, 24px); grid-auto-rows: 24px;
+      gap: 2px; padding: 5px; border: 1px solid var(--rule); border-radius: 18px; background: var(--panel);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    .panpad button { width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--fg-2);
+      font: 500 12px/1 var(--mono); cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none; transition: background-color .15s, color .15s; }
+    .panpad button:hover { color: var(--fg); }
+    .panpad button.held, .panpad button:active { background: var(--fg); color: var(--bg); }
+    .panpad button:focus-visible { outline: 1px dashed var(--fg); outline-offset: 1px; }
+    .zoomed .panpad, .flowing .panpad { opacity: .3; }
+    /* on a phone it sits bottom right, above the hint, clear of the model */
+    @media (max-width: 760px) { .panpad { left: auto; right: var(--gutter); top: auto !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 78px); } }`;
+  document.head.appendChild(padCss);
+  const panpad = document.createElement("div");
+  panpad.className = "panpad"; panpad.setAttribute("role", "group"); panpad.setAttribute("aria-label", "Pan the view");
+  const PAD = [["up", 0, 1, "↑", 2, 1], ["left", -1, 0, "←", 1, 2], ["centre", 0, 0, "◎", 2, 2], ["right", 1, 0, "→", 3, 2], ["down", 0, -1, "↓", 2, 3]];
+  const nudge = (dx, dy, k) => { pan.x = clampPan(pan.x + dx * k * zoom); pan.y = clampPan(pan.y + dy * k * zoom); };
+  PAD.forEach(([name, dx, dy, glyph, col, row]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = glyph; b.style.gridColumn = col; b.style.gridRow = row;
+    b.setAttribute("aria-label", name === "centre" ? "Centre the view" : "Pan " + name);
+    b.title = name === "centre" ? "Centre the view" : "Pan " + name + " (Alt + arrow; hold to keep going)";
+    let wait = null, rep = null;
+    const stop = () => { clearTimeout(wait); clearInterval(rep); wait = rep = null; b.classList.remove("held"); };
+    b.addEventListener("pointerdown", e => {
+      e.preventDefault(); e.stopPropagation();
+      if (name === "centre") { pan.x = pan.y = 0; return; }
+      nudge(dx, dy, 0.08); b.classList.add("held");
+      // held: a steady speed (radii a second), however often the timer gets to run
+      wait = setTimeout(() => { let last = performance.now(); rep = setInterval(() => { const now = performance.now(); nudge(dx, dy, 0.75 * (now - last) / 1000); last = now; }, 30); }, 280);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(t => b.addEventListener(t, stop));
+    // from the keyboard (Enter or Space on a focused button) a click is one step
+    b.addEventListener("click", e => { e.stopPropagation(); if (e.detail === 0) { if (name === "centre") pan.x = pan.y = 0; else nudge(dx, dy, 0.08); } });
+    panpad.appendChild(b);
+  });
+  document.body.appendChild(panpad);
+  function placePanpad() { panpad.style.top = Math.round(viewbar.getBoundingClientRect().bottom + 10) + "px"; }
+  addEventListener("resize", () => requestAnimationFrame(placePanpad));
+  new MutationObserver(() => requestAnimationFrame(placePanpad)).observe(document.querySelector("header") || document.body, { childList: true, subtree: true });
+  requestAnimationFrame(placePanpad);
+  addEventListener("keydown", e => {
+    if (!e.altKey || e.metaKey || e.ctrlKey || !e.key.startsWith("Arrow") || e.target.closest("input, select, textarea, [contenteditable]")) return;
+    e.preventDefault();
+    const d = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+    nudge(d[0], d[1], 0.08);
+  });
 
   // ---------- your own photo or video on the screen (models with a screen) ----------
   // The picture fills the screen's active area (cropped to fit, rounded corners kept) in every render style
