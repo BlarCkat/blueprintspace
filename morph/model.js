@@ -54,7 +54,6 @@
     hotspots: G.hotspots.map(h => ({ t: h.t, s: h.s, p: h.p, o: h.o })),
     detail: DETAIL,
     tour: G.tour,
-    backdrop: ["#ffe4cc", "#f2985a"],
     materials: [
       [/Console Front Shell|Console Back Shell|Side Module/, ["paint", { color: 0xece4d6, roughness: 0.4, clearcoat: 0.3 }]],
       [/Controller Base|Controller Top/, ["alu", { color: 0xe8e3da, roughness: 0.26 }]], [/Plinth/, ["plastic", { color: 0xcfc8bc, roughness: 0.45 }]],
