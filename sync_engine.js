@@ -1,10 +1,10 @@
 /*
-Copy engine.js into every model page built into index.html.
+Copy engine.js and realistic.js into every model page built into index.html.
 
 Each page carries its own copy of the shared engine, with the shaded and photo styles (realistic.js) spliced in
 just before its end. The pages' sources and build_pages.py aren't in this repo, so after a change to engine.js
-this puts it into the built pages directly: everything from the engine's first line up to the spliced styles is
-replaced, and the styles and the engine's closing lines are left as they are. Then rebuild the pages made here
+this puts them into the built pages directly: everything from the engine's first line up to the spliced styles is
+replaced with engine.js, the styles with realistic.js, and the engine's closing lines are left as they are. Then rebuild the pages made here
 (they take their engine from those pages):
 
     node sync_engine.js && node macbookpro/build.js && node egpu/build.js && node hover/build.js
@@ -21,6 +21,8 @@ const tail = engine.lastIndexOf("  requestAnimationFrame(tick);\n})();");
 if (tail < 0) throw new Error("engine.js doesn't end as expected");
 const START = "// Blueprint model engine", STYLES = "// ---------- shaded and photo render styles";
 const head = engine.slice(engine.indexOf(START), tail);
+const styles = read(path.join(HERE, "realistic.js"));
+const END = "requestAnimationFrame(tick);\n})();";
 
 const galleryPath = path.join(HERE, "index.html");
 const gallery = read(galleryPath);
@@ -37,8 +39,10 @@ models.forEach(x => {
   const a = x.html.indexOf(START), s = x.html.indexOf(STYLES, a);
   if (a < 0 || s < 0) throw new Error(x.id + ": engine or styles not found in its page");
   const b = x.html.lastIndexOf("\n", s) + 1;   // the start of the styles' first line
-  const html = x.html.slice(0, a) + head + x.html.slice(b);
+  const e = x.html.lastIndexOf(END);             // the engine's closing lines, after the styles
+  if (e < b) throw new Error(x.id + ": the engine's closing lines weren't found after the styles");
+  const html = x.html.slice(0, a) + head + styles + x.html.slice(e);
   if (html !== x.html) { x.html = html; changed++; }
 });
 fs.writeFileSync(galleryPath, gallery.slice(0, m.index) + "\n" + m[1] + json(models).split("<").join("\\u003c") + ";\n" + gallery.slice(m.index + m[0].length));
-console.log(`engine.js copied into ${changed} of ${models.length} pages`);
+console.log(`engine.js and realistic.js copied into ${changed} of ${models.length} pages`);

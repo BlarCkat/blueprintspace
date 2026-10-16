@@ -15,7 +15,7 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, steam/, walkman/ and v8/build.js's); key: the localStorage theme key the page uses
+// macbookpro/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, morph/, steam/, walkman/ and v8/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
@@ -45,6 +45,8 @@ const MODELS = [
     dir: "switch", key: "nsw-theme", category: "Consoles" },
   { id: "psp", label: "PlayStation Portable", kind: "console", tags: "psp playstation portable sony handheld umd 2004 games",
     dir: "psp", key: "psp-theme", category: "Consoles" },
+  { id: "morph", label: "Morph Handheld", kind: "console", tags: "morph handheld console concept retro controller screen orange cream design",
+    dir: "morph", key: "mrp-theme", category: "Consoles" },
   { id: "steam", label: "Steam Machine", kind: "console", tags: "steam machine valve console pc gaming steamos fan led",
     dir: "steam", key: "stm-theme", category: "Consoles" },
   { id: "cpu", label: "X9 Processor", kind: "chip", tags: "chip cpu desktop socket lga",

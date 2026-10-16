@@ -2026,11 +2026,12 @@ window.EG1_GEOMETRY.data = "BBDA+fAABBD8+fAABBD8+bgBBBDA+bgBBBDA+RQPBBD8+RQPBBD8
     renderer.render(scene, camera);
     requestAnimationFrame(tick);
   }
-    // ---------- shaded and photo render styles (added by blueprints/build_gallery.py) ----------
+  // ---------- shaded and photo render styles (added by blueprints/build_gallery.py) ----------
   // window.__bpSetStyle("blueprint" | "realistic" | "photo"). "realistic" (Shaded) swaps the line drawing for
   // flat-coloured shaded parts in a soft studio. "photo" goes further: physical materials with surface texture
-  // (plastic grain, brushed metal, circuit boards, clear-coated gloss), a brighter studio with soft shadows
-  // cast onto an invisible floor. Materials come from the model's own list (M.materials) first, then from
+  // (plastic grain, brushed metal, circuit boards, clear-coated gloss), lit like a product photoshoot: a warm
+  // seamless backdrop (M.backdrop: [light, deep] colours, peach by default), a big soft key, a coloured rim
+  // light and a soft shadow on the backdrop's floor; the page's text turns dark to sit on it. Materials come from the model's own list (M.materials) first, then from
   // each part's name.
   (function () {
     const P = {
@@ -2281,7 +2282,32 @@ window.EG1_GEOMETRY.data = "BBDA+fAABBD8+fAABBD8+bgBBBDA+bgBBBDA+RQPBBD8+RQPBBD8
     }
 
     // ---------- photo: physical materials, textures, soft shadows on an invisible floor ----------
-    let floor = null, sun = null;
+    let floor = null, sun = null, contact = null, backdrop = null;
+    // the seamless paper: lighter round the model and towards the light, deepening to the corners
+    function backdropTexture([light, deep]) {
+      const c = document.createElement("canvas"); c.width = c.height = 1024;
+      const g = c.getContext("2d"), css = col => "#" + col.getHexString();
+      g.fillStyle = css(deep); g.fillRect(0, 0, 1024, 1024);
+      let gr = g.createRadialGradient(560, 430, 40, 512, 512, 760);
+      gr.addColorStop(0, css(light)); gr.addColorStop(0.5, css(light.clone().lerp(deep, 0.4))); gr.addColorStop(1, css(deep));
+      g.fillStyle = gr; g.fillRect(0, 0, 1024, 1024);
+      gr = g.createRadialGradient(880, 120, 0, 880, 120, 520);   // the glow of the key light on the paper
+      gr.addColorStop(0, "rgba(255,248,240,0.4)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = gr; g.fillRect(0, 0, 1024, 1024);
+      // a touch of grain, so the gradient doesn't band
+      const im = g.getImageData(0, 0, 1024, 1024), d = im.data;
+      for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - 0.5) * 5; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+      g.putImageData(im, 0, 0);
+      const t = new THREE.CanvasTexture(c);
+      t.encoding = THREE.sRGBEncoding;
+      return t;
+    }
+    // dark text and panels for the page while the backdrop is up
+    const photoCss = document.createElement("style");
+    photoCss.textContent = "html.bp-photo{--bg:#fff3e8!important;--fg:#22180f!important;--fg-2:rgba(34,24,15,.7)!important;--fg-3:rgba(34,24,15,.48)!important;" +
+      "--rule:rgba(34,24,15,.2)!important;--panel:rgba(255,244,234,.72)!important;--grid:transparent!important;color-scheme:light}" +
+      "html.bp-photo .sheet{opacity:0}";
+    document.head.appendChild(photoCss);
     function buildPhoto() {
       photoBuilt = true;
       fillMeshes().forEach(m => {
@@ -2309,36 +2335,52 @@ window.EG1_GEOMETRY.data = "BBDA+fAABBD8+fAABBD8+bgBBBDA+bgBBBDA+RQPBBD8+RQPBBD8
         m.add(r);
         photos.push({ r, mat, entry: byName[m.name] });
       });
-      // a bright product studio: a big overhead softbox, two strip lights, a warm bounce and a cool fill
+      // a product studio inside the backdrop's colour: a big overhead softbox, two strip lights, the warm
+      // backdrop bouncing light back from below and behind, so glossy parts reflect the set they sit in
+      const BD = (M.backdrop || ["#ffe3cb", "#f29a5e"]).map(c => new THREE.Color(c));
+      const deep = BD[1].getHex(), light = BD[0].getHex();
       photoEnv = studio([
-        [0, 4.9, 0, 7, 7, 3.0], [-4.9, 2.2, 1.2, 2.2, 7, 2.2], [4.9, 2.2, -0.8, 2.2, 7, 1.6],
-        [0, -4.9, 0, 9, 9, 0.25, 0xffeedd], [1.5, 1.5, 4.9, 4, 3, 0.8, 0xe8f0ff], [-2, 1, -4.9, 6, 3, 0.7],
-      ], 0x2c2d31);
+        [0, 4.9, 0, 7, 7, 3.2], [-4.9, 2.2, 1.2, 2.2, 7, 2.4], [4.9, 2.2, -0.8, 2.2, 7, 1.8],
+        [0, -4.9, 0, 9, 9, 0.55, light], [1.5, 1.5, 4.9, 4, 3, 0.9, light], [-2, 1, -4.9, 8, 6, 0.9, deep],
+      ], new THREE.Color(deep).multiplyScalar(0.45).getHex());
+      backdrop = backdropTexture(BD);
       // the sun casts the shadows; it turns with the model so they stay put under it
-      sun = new THREE.DirectionalLight(0xfff6ec, 1.5);
+      sun = new THREE.DirectionalLight(0xfff3e6, 1.7);
       const R = rE * 1.25, c = cA.clone().add(cE).multiplyScalar(0.5);
       sun.position.set(c.x - R * 0.35, c.y + R * 2.2, c.z + R * 0.55);
       sun.target.position.copy(c);
       sun.castShadow = true;
-      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.mapSize.set(4096, 4096);
       Object.assign(sun.shadow.camera, { left: -R * 1.4, right: R * 1.4, top: R * 1.4, bottom: -R * 1.4, near: R * 0.2, far: R * 5 });
       sun.shadow.camera.updateProjectionMatrix();
       sun.shadow.bias = -0.0004;
       sun.shadow.normalBias = rE * 0.0015;
       sun.shadow.radius = 5;
       model.add(sun, sun.target);
-      // a soft key from the viewer's side and a cool rim so dark parts keep their shape
-      const key = new THREE.DirectionalLight(0xffffff, 0.7); key.position.set(0.5, 0.6, 0.8);
-      const rim = new THREE.DirectionalLight(0xdfe9ff, 0.9); rim.position.set(-0.4, 0.6, -1);
-      [key, rim].forEach(l => { camera.add(l); camera.add(l.target); l.target.position.set(0, 0, -1); });
-      const hemi = new THREE.HemisphereLight(0xffffff, 0x50483f, 0.25);
+      // a soft key from the viewer's side, a rim in the backdrop's colour from behind and a kicker from the
+      // other side, so edges catch a warm glow and dark parts keep their shape
+      const key = new THREE.DirectionalLight(0xffffff, 0.75); key.position.set(0.5, 0.6, 0.8);
+      const rim = new THREE.DirectionalLight(new THREE.Color(deep).lerp(new THREE.Color(0xffffff), 0.25), 1.4); rim.position.set(0.7, 0.4, -1);
+      const kick = new THREE.DirectionalLight(new THREE.Color(light), 0.5); kick.position.set(-0.9, 0.1, -0.3);
+      [key, rim, kick].forEach(l => { camera.add(l); camera.add(l.target); l.target.position.set(0, 0, -1); });
+      const hemi = new THREE.HemisphereLight(light, deep, 0.35);
       scene.add(hemi);
-      floor = new THREE.Mesh(new THREE.PlaneGeometry(rE * 12, rE * 12), new THREE.ShadowMaterial({ opacity: 0.4 }));
+      floor = new THREE.Mesh(new THREE.PlaneGeometry(rE * 12, rE * 12), new THREE.ShadowMaterial({ opacity: 0.16 }));
       floor.rotation.x = -Math.PI / 2;
       floor.receiveShadow = true;
       floor.raycast = () => {};
       model.add(floor);
-      photoLights.push(sun, key, rim, hemi, floor);
+      // and a broad, soft contact shadow under the model, like a product resting on paper
+      const blob = document.createElement("canvas"); blob.width = blob.height = 256;
+      const bg = blob.getContext("2d"), gr = bg.createRadialGradient(128, 128, 0, 128, 128, 128);
+      gr.addColorStop(0, "rgba(60,30,10,0.42)"); gr.addColorStop(0.45, "rgba(60,30,10,0.2)"); gr.addColorStop(1, "rgba(60,30,10,0)");
+      bg.fillStyle = gr; bg.fillRect(0, 0, 256, 256);
+      contact = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(blob), transparent: true, depthWrite: false, toneMapped: false }));
+      contact.rotation.x = -Math.PI / 2;
+      contact.raycast = () => {};
+      contact.renderOrder = -1;
+      model.add(contact);
+      photoLights.push(sun, key, rim, kick, hemi, floor, contact);
       photoLights.forEach(l => { l.visible = false; });
     }
 
@@ -2353,13 +2395,15 @@ window.EG1_GEOMETRY.data = "BBDA+fAABBD8+fAABBD8+bgBBBDA+bgBBBDA+RQPBBD8+RQPBBD8
       lights.forEach(l => { l.visible = style === "realistic"; });
       photoLights.forEach(l => { l.visible = photo; });
       scene.environment = photo ? photoEnv : real ? env : null;
+      scene.background = photo ? backdrop : null;
+      document.documentElement.classList.toggle("bp-photo", photo);
       renderer.shadowMap.enabled = photo;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       // filmic tone mapping and sRGB output for the shaded parts; the page's own flat materials
       // (screen animations, key legends, signal paths) keep their colours
       renderer.outputEncoding = real ? THREE.sRGBEncoding : THREE.LinearEncoding;
       renderer.toneMapping = real ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
-      renderer.toneMappingExposure = photo ? 0.85 : 1;
+      renderer.toneMappingExposure = photo ? 0.95 : 1;
       scene.traverse(o => {
         if (!o.material) return;
         if (!o.material.isMeshStandardMaterial) o.material.toneMapped = false;
@@ -2384,6 +2428,11 @@ window.EG1_GEOMETRY.data = "BBDA+fAABBD8+fAABBD8+bgBBBDA+bgBBBDA+RQPBBD8+RQPBBD8
         const e = explode * explode * (3 - 2 * explode);
         floor.position.y = boxA.min.y + (boxE.min.y - boxA.min.y) * e - rE * 0.01;
         floor.position.x = (cA.x + cE.x) / 2; floor.position.z = (cA.z + cE.z) / 2;
+        // the contact shadow spreads with the model's footprint
+        const sx = (boxA.max.x - boxA.min.x) + ((boxE.max.x - boxE.min.x) - (boxA.max.x - boxA.min.x)) * e;
+        const sz = (boxA.max.z - boxA.min.z) + ((boxE.max.z - boxE.min.z) - (boxA.max.z - boxA.min.z)) * e;
+        contact.position.copy(floor.position); contact.position.y += rE * 0.002;
+        contact.scale.set(sx * 1.35, sz * 1.35, 1);
       }
       render(s, c);
     };
