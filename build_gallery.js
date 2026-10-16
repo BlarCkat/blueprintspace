@@ -15,7 +15,7 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/build.js's); key: the localStorage theme key the page uses
+// macbookpro/build.js's and egpu/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
@@ -35,6 +35,8 @@ const MODELS = [
     folder: "ps5_landing", key: "ps5-theme", category: "Consoles" },
   { id: "cpu", label: "X9 Processor", kind: "chip", tags: "chip cpu desktop socket lga",
     folder: "cpu_landing", key: "x9-theme", category: "Components" },
+  { id: "egpu", label: "EG-1 eGPU", kind: "egpu", tags: "egpu external gpu graphics card enclosure thunderbolt fans pcie",
+    dir: "egpu", key: "eg1-theme", category: "Components" },
   { id: "turbofan", label: "TF-9 Turbofan", kind: "engine", tags: "engine jet turbine aircraft",
     folder: "turbofan_landing", key: "tf9-theme", category: "Engines" },
 ];
