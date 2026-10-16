@@ -15,7 +15,7 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/ and v8/build.js's); key: the localStorage theme key the page uses
+// macbookpro/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, steam/, walkman/ and v8/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
@@ -25,8 +25,12 @@ const MODELS = [
     folder: "spectre_landing", key: "sx360-theme", category: "Computers" },
   { id: "macbookpro", label: "MacBook Pro 14 (M5)", kind: "laptop", tags: "laptop apple macbook pro m5 notebook 2025",
     dir: "macbookpro", key: "mbp14-theme", category: "Computers" },
+  { id: "gamingpc", label: "Custom Gaming PC", kind: "desktop", tags: "pc gaming custom build tower desktop rgb gpu cpu aio liquid cooling fans animated",
+    dir: "gamingpc", key: "gpc-theme", category: "Computers" },
   { id: "iphone17", label: "iPhone 17", kind: "phone", tags: "phone apple smartphone mobile",
     folder: "iphone17_landing", key: "ip17-theme", category: "Phones" },
+  { id: "walkman", label: "Sony Walkman", kind: "player", tags: "walkman sony tps-l2 cassette tape player music 1979 retro portable animated",
+    dir: "walkman", key: "wm-theme", category: "Audio" },
   { id: "playstation", label: "PlayStation", kind: "console", tags: "console sony ps1 psx playstation 1 dualshock controller 1994 games",
     folder: "playstation_landing", key: "ps1-theme", category: "Consoles" },
   { id: "ps3", label: "PlayStation 3", kind: "console", tags: "console sony ps3 cell dualshock 3 sixaxis 2006 games blu-ray",
@@ -37,6 +41,12 @@ const MODELS = [
     folder: "ps5_landing", key: "ps5-theme", category: "Consoles" },
   { id: "xbox", label: "Xbox Series X", kind: "console", tags: "xbox series x microsoft console games 2020 fan",
     dir: "xbox", key: "xsx-theme", category: "Consoles" },
+  { id: "switch", label: "Nintendo Switch (OLED)", kind: "console", tags: "nintendo switch oled handheld console joy-con games portable",
+    dir: "switch", key: "nsw-theme", category: "Consoles" },
+  { id: "psp", label: "PlayStation Portable", kind: "console", tags: "psp playstation portable sony handheld umd 2004 games",
+    dir: "psp", key: "psp-theme", category: "Consoles" },
+  { id: "steam", label: "Steam Machine", kind: "console", tags: "steam machine valve console pc gaming steamos fan led",
+    dir: "steam", key: "stm-theme", category: "Consoles" },
   { id: "cpu", label: "X9 Processor", kind: "chip", tags: "chip cpu desktop socket lga",
     folder: "cpu_landing", key: "x9-theme", category: "Components" },
   { id: "egpu", label: "EG-1 eGPU", kind: "egpu", tags: "egpu external gpu graphics card enclosure thunderbolt fans pcie",
