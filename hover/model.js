@@ -7,9 +7,10 @@
 
   // ---------- part notes, shown when you click a part ----------
   const DETAIL = {
-    "Hull": ["Hull", "Faceted composite armour over a welded space frame. The flat facets are cheap to make and easy to patch, and the tail holds the power cell behind an access door."],
+    "Hull": ["Hull", "A rounded composite skin over a welded space frame: blunt at the nose, swelling amidships and tapering to the tail, which holds the power cell behind an access door."],
     "Side Armour": ["Side armour", "Bolt-on plates over the flanks ahead of the turbines, where stones and debris thrown up by the pads hit hardest."],
-    "Dorsal Deck": ["Dorsal deck", "A raised deck along the spine with the cockpit set into it, a cooling vent ahead of the canopy and two service hatches near the nose."],
+    "Side Skirts": ["Side skirts", "Ribbed rubbing strips along the bottom of each flank. They take the knocks when the hauler settles against a dock or brushes past an obstacle."],
+    "Dorsal Deck": ["Dorsal deck", "A raised deck along the spine with the cockpit set into it, a cooling vent ahead of the canopy, two service hatches near the nose, and a fairing that rises behind the cockpit to the beam."],
     "Cockpit Collar": ["Cockpit collar", "An armoured ring that raises the pilot above the deck and protects the canopy's edge."],
     "Canopy": ["Canopy", "A one-piece dome with a light frame, giving the pilot a clear view all the way round."],
     "Pilot Station": ["Pilot station", "A single seat facing a console, flown with one stick: forward and back for the pods, side to side for the turbines."],
@@ -38,8 +39,8 @@
     tour: G.tour,
     // shaded and photo styles: off-white panels like the sketch, dark machinery
     materials: [
-      [/^Hull$|Dorsal Deck|Engine Pod|Outrigger Beam|Cockpit Collar|Side Armour/, ["paint", { color: 0xe4e4e0 }]],
-      [/Canopy/, "clearGlass"], [/Pilot Station/, ["plastic", { color: 0x3a3c40 }]],
+      [/^Hull$|Dorsal Deck|Engine Pod|Outrigger Beam|Cockpit Collar|Side Armour|Side Skirts/, ["paint", { color: 0xe4e4e0 }]],
+      [/Canopy/, ["clearGlass", { color: 0xc9d3da, opacity: 0.16 }]], [/Pilot Station/, ["plastic", { color: 0x3a3c40 }]],
       [/Turbine$|Ventral Fins|Nose Sensor Bay/, ["greyPaint", { color: 0x5d6066 }]],
       [/Rotor|Radar/, ["darkAlu", { color: 0x3c4046 }]], [/Hover Pads/, ["plastic", { color: 0x2a2c30 }]],
     ],
