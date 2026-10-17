@@ -15,7 +15,7 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, morph/, steam/, walkman/ and v8/build.js's); key: the localStorage theme key the page uses
+// macbookpro/, framework/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, morph/, steam/, walkman/, gameboy/, spaceship/ and v8/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
@@ -25,12 +25,16 @@ const MODELS = [
     folder: "spectre_landing", key: "sx360-theme", category: "Computers" },
   { id: "macbookpro", label: "MacBook Pro 14 (M5)", kind: "laptop", tags: "laptop apple macbook pro m5 notebook 2025",
     dir: "macbookpro", key: "mbp14-theme", category: "Computers" },
+  { id: "framework", label: "Framework Laptop 13", kind: "laptop", tags: "framework laptop 13 repairable modular expansion cards notebook linux",
+    dir: "framework", key: "fw13-theme", category: "Computers" },
   { id: "gamingpc", label: "Custom Gaming PC", kind: "desktop", tags: "pc gaming custom build tower desktop rgb gpu cpu aio liquid cooling fans animated",
     dir: "gamingpc", key: "gpc-theme", category: "Computers" },
   { id: "iphone17", label: "iPhone 17", kind: "phone", tags: "phone apple smartphone mobile",
     folder: "iphone17_landing", key: "ip17-theme", category: "Phones" },
   { id: "walkman", label: "Sony Walkman", kind: "player", tags: "walkman sony tps-l2 cassette tape player music 1979 retro portable animated",
     dir: "walkman", key: "wm-theme", category: "Audio" },
+  { id: "gameboy", label: "Game Boy", kind: "console", tags: "game boy gameboy nintendo dmg handheld 1989 retro tetris cartridge",
+    dir: "gameboy", key: "gb-theme", category: "Consoles" },
   { id: "playstation", label: "PlayStation", kind: "console", tags: "console sony ps1 psx playstation 1 dualshock controller 1994 games",
     folder: "playstation_landing", key: "ps1-theme", category: "Consoles" },
   { id: "ps3", label: "PlayStation 3", kind: "console", tags: "console sony ps3 cell dualshock 3 sixaxis 2006 games blu-ray",
@@ -61,6 +65,8 @@ const MODELS = [
     dir: "hover", key: "hv9-theme", category: "Vehicles" },
   { id: "cybertruck", label: "Cybertruck", kind: "truck", tags: "cybertruck tesla truck pickup electric ev vehicle car",
     dir: "cybertruck", key: "ct-theme", category: "Vehicles" },
+  { id: "spaceship", label: "SX-7 Starhopper", kind: "spaceship", tags: "spaceship starship space ship sci-fi shuttle rocket starhopper spacecraft",
+    dir: "spaceship", key: "sx7-theme", category: "Vehicles" },
   { id: "rubiks", label: "Rubik's Cube", kind: "puzzle", tags: "rubiks rubik cube puzzle toy 3x3 speedcube animated",
     dir: "rubiks", key: "rc3-theme", category: "Toys" },
 ];
