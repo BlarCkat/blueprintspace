@@ -15,7 +15,7 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/, framework/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, morph/, steam/, walkman/, gameboy/, spaceship/ and v8/build.js's); key: the localStorage theme key the page uses
+// macbookpro/, framework/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, morph/, steam/, walkman/, gameboy/, playdate/, gbconcept/, ledcube/, spaceship/ and v8/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
@@ -35,6 +35,10 @@ const MODELS = [
     dir: "walkman", key: "wm-theme", category: "Audio" },
   { id: "gameboy", label: "Game Boy", kind: "console", tags: "game boy gameboy nintendo dmg handheld 1989 retro tetris cartridge",
     dir: "gameboy", key: "gb-theme", category: "Consoles" },
+  { id: "playdate", label: "Playdate", kind: "console", tags: "playdate panic handheld crank yellow 1-bit games",
+    dir: "playdate", key: "pd-theme", category: "Consoles" },
+  { id: "gbconcept", label: "Game Boy Concept", kind: "console", tags: "game boy concept translucent smoke redesign handheld modern purple",
+    dir: "gbconcept", key: "gbc-theme", category: "Consoles" },
   { id: "playstation", label: "PlayStation", kind: "console", tags: "console sony ps1 psx playstation 1 dualshock controller 1994 games",
     folder: "playstation_landing", key: "ps1-theme", category: "Consoles" },
   { id: "ps3", label: "PlayStation 3", kind: "console", tags: "console sony ps3 cell dualshock 3 sixaxis 2006 games blu-ray",
@@ -69,6 +73,8 @@ const MODELS = [
     dir: "spaceship", key: "sx7-theme", category: "Vehicles" },
   { id: "rubiks", label: "Rubik's Cube", kind: "puzzle", tags: "rubiks rubik cube puzzle toy 3x3 speedcube animated",
     dir: "rubiks", key: "rc3-theme", category: "Toys" },
+  { id: "ledcube", label: "LED Cube", kind: "gadget", tags: "led cube volumetric display voxel light lamp gadget animated red",
+    dir: "ledcube", key: "led-theme", category: "Gadgets" },
 ];
 const DEFAULT = "macintosh";
 

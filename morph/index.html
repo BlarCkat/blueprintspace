@@ -278,7 +278,7 @@ window.BP_screenAnimation = function (E, o) {
   mat.userData = { base: 1, k: 1, target: 1 };
   const p0 = toThree(...S.origin), pr = toThree(...S.right), pt = toThree(...S.top);
   const u = pr.clone().sub(p0), v = pt.clone().sub(p0);
-  const lift = u.clone().cross(v).normalize().multiplyScalar(Math.max(0.1, u.length() * 0.0015));
+  const lift = u.clone().cross(v).normalize().multiplyScalar(Math.max(0.1, u.length() * 0.0015) * (o.lift || 1));   // o.lift stacks one layer over another
   const pq = pr.clone().add(pt).sub(p0);
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute([p0, pr, pq, pt].flatMap(p => p.clone().add(lift).toArray()), 3));
