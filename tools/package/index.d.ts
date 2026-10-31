@@ -39,6 +39,12 @@ export declare class BlueprintModel extends HTMLElement {
   autorotate: number | boolean;
   /** Pointer turns, zooms and takes it apart (default true). */
   interactive: boolean;
+  /** The view's angle round the model, degrees from the front towards its right side (default 45). */
+  angle: number;
+  /** How high the view is, degrees above the model; null uses the model's own (default). */
+  elevation: number | null;
+  /** Hold the view at its angle so the pointer can't turn it (default true). */
+  locked: boolean;
   /** Moving parts and camera easing (default true); false keeps everything still. Reloads the model. */
   motion: boolean;
   explode(): void;
@@ -57,7 +63,7 @@ declare global {
       "blueprint-model": {
         model: ModelId; theme?: Theme; render?: Render; base?: string;
         transparent?: Flag; controls?: Flag; labels?: Flag; xray?: Flag; exploded?: Flag | "hover"; animation?: Flag;
-        autorotate?: Flag | number; interactive?: Flag; motion?: Flag;
+        autorotate?: Flag | number; interactive?: Flag; motion?: Flag; angle?: number | string; elevation?: number | string; locked?: Flag;
         class?: string; className?: string; style?: unknown; id?: string; ref?: unknown;
       };
     }

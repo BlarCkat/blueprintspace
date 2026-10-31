@@ -76,6 +76,9 @@ td { color: var(--fg-2); }
 .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
 .checks label { display: flex; align-items: center; gap: 8px; font: 400 13px/1.2 var(--mono); color: var(--fg-2); cursor: pointer; }
 .checks input { accent-color: var(--fg); width: 15px; height: 15px; }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input { flex: 1; accent-color: var(--fg); }
+.range output { min-width: 86px; text-align: right; font: 400 12px/1 var(--mono); letter-spacing: 0; text-transform: none; color: var(--fg-2); }
 .acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .play .code { grid-column: 1 / -1; margin: 0; border: 0; border-top: 1px solid var(--rule); border-radius: 0; }
 
@@ -140,7 +143,10 @@ td { color: var(--fg-2); }
             <label><input type="checkbox" data-o="controls"> controls</label>
             <label><input type="checkbox" data-o="autorotate"> autorotate</label>
             <label><input type="checkbox" data-o="interactive" checked> interactive</label>
+            <label><input type="checkbox" data-o="locked" checked> locked</label>
           </div>
+          <label class="f">Angle <span class="range"><input type="range" id="p-angle" min="-180" max="180" step="5" value="45"><output id="o-angle">45°</output></span></label>
+          <label class="f">Elevation <span class="range"><input type="range" id="p-elev" min="-20" max="80" step="5" value="25"><output id="o-elev">model's own</output></span></label>
           <div class="acts"><button class="pill" id="a-tour">Tour</button><button class="pill" id="a-reset">Reset</button></div>
         </div>
         <div class="code"><span class="tag">HTML</span><button class="pill" data-copy-from="p-code">Copy</button><pre id="p-code"></pre></div>
@@ -199,6 +205,7 @@ import "blueprintspace";
 
     <section id="options">
       <h2>Attributes and properties</h2>
+      <p class="lead">A model opens at a 45° view from its right side and holds it: people can zoom in and take it apart, but not turn it. Change the view with <code>angle</code> and <code>elevation</code>, or set <code>locked="false"</code> to let them turn it.</p>
       <p class="lead">Every option is both an HTML attribute and a JavaScript property on the element. Boolean attributes are on when present (or <code>"true"</code>) and off with <code>"false"</code>. All of them change live except <code>model</code>, <code>base</code> and <code>motion</code>, which reload the model.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Attribute / property</th><th>Values</th><th>Default</th><th>What it does</th></tr></thead>
@@ -212,7 +219,10 @@ import "blueprintspace";
           <tr><td><code>exploded</code></td><td><code>true</code> <code>false</code>, or absent</td><td>hover</td><td><code>true</code> takes it apart, <code>false</code> holds it assembled; without the attribute it comes apart while hovered.</td></tr>
           <tr><td><code>labels</code></td><td>boolean</td><td>off</td><td>Callout labels on the parts.</td></tr>
           <tr><td><code>controls</code></td><td>boolean</td><td>off</td><td>The model page's own buttons, title and hints.</td></tr>
-          <tr><td><code>autorotate</code></td><td>boolean, or degrees a second</td><td>off</td><td>A slow turn: <code>autorotate</code> at 12°/s, or <code>autorotate="30"</code>.</td></tr>
+          <tr><td><code>angle</code></td><td>degrees</td><td><code>45</code></td><td>The view's angle round the model, from the front towards its right side: <code>0</code> straight on, <code>90</code> the right side, <code>-45</code> from the left.</td></tr>
+          <tr><td><code>elevation</code></td><td>degrees</td><td>the model's own</td><td>How high the view is, above the model.</td></tr>
+          <tr><td><code>locked</code></td><td>boolean</td><td>on</td><td>Holds the view at its angle so the pointer can't turn it; zoom and taking it apart still work. <code>locked="false"</code> lets people turn it.</td></tr>
+          <tr><td><code>autorotate</code></td><td>boolean, or degrees a second</td><td>off</td><td>A slow turn: <code>autorotate</code> at 12°/s, or <code>autorotate="30"</code>. It turns even while locked.</td></tr>
           <tr><td><code>interactive</code></td><td>boolean</td><td>on</td><td>Turn, zoom and take it apart with the pointer. Off makes it a still picture that ignores the pointer.</td></tr>
           <tr><td><code>motion</code></td><td>boolean</td><td>on</td><td>Moving parts (fans, reels, cranks) and camera easing. Off keeps everything still.</td></tr>
           <tr><td><code>base</code></td><td>a URL</td><td>the CDN</td><td>Where <code>models/</code> and <code>thumbs/</code> are served from.</td></tr>
@@ -227,6 +237,8 @@ el.xray = false;          // no hidden edges
 el.exploded = true;       // take it apart (false: together, null: on hover)
 el.autorotate = 20;       // degrees a second (0 stops)
 el.interactive = false;   // a still picture
+el.angle = 90;            // see it from the right side
+el.locked = false;        // let people turn it
 el.theme = "navy:inv";
 el.render = "shaded";</pre></div>
     </section>
@@ -337,13 +349,18 @@ img.src = thumbnail("gameboy");</pre></div>
   const el = document.createElement("blueprint-model");
   $("stage").appendChild(el);
   const checks = [...document.querySelectorAll("[data-o]")];
-  const DEFAULT_ON = { xray: true, interactive: true };
+  const DEFAULT_ON = { xray: true, interactive: true, locked: true };
+  let elevTouched = false;
+  $("p-elev").addEventListener("input", () => { elevTouched = true; });
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function update() {
     el.model = sel.value;
     el.theme = $("p-theme").value;
     el.render = $("p-render").value;
     checks.forEach(c => { el[c.dataset.o] = c.dataset.o === "autorotate" ? (c.checked ? 15 : 0) : c.checked; });
+    const ang = +$("p-angle").value, elv = +$("p-elev").value;
+    el.angle = ang; el.elevation = elevTouched ? elv : null;
+    $("o-angle").textContent = ang + "°"; $("o-elev").textContent = elevTouched ? elv + "°" : "model's own";
     // the code: only what differs from the defaults
     const attrs = [["model", el.model]];
     if (el.theme !== "dark") attrs.push(["theme", el.theme]);
@@ -353,11 +370,14 @@ img.src = thumbnail("gameboy");</pre></div>
       if (k === "autorotate") { if (c.checked) attrs.push(["autorotate", "15"]); }
       else if (c.checked !== !!DEFAULT_ON[k]) attrs.push([k, c.checked ? null : "false"]);
     });
+    if (ang !== 45) attrs.push(["angle", String(ang)]);
+    if (elevTouched) attrs.push(["elevation", String(elv)]);
     const tag = attrs.map(([k, v]) => v === null ? `<span class="c-attr">${k}</span>` : `<span class="c-attr">${k}</span>=<span class="c-str">"${esc(v)}"</span>`).join(" ");
     $("p-code").innerHTML = esc(`<script type="module" src="https://cdn.jsdelivr.net/npm/blueprintspace@${V}/index.js"><\/script>`) + "\n\n" +
       `<span class="c-tag">&lt;blueprint-model</span> ${tag}<span class="c-tag">&gt;&lt;/blueprint-model&gt;</span>`;
   }
   [sel, $("p-theme"), $("p-render"), ...checks].forEach(x => x.addEventListener("change", update));
+  [$("p-angle"), $("p-elev")].forEach(x => x.addEventListener("input", update));
   $("a-tour").onclick = () => el.tour();
   $("a-reset").onclick = () => el.reset();
   update();
