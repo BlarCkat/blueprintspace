@@ -14,7 +14,17 @@
 :root { --bg: #141414; --fg: #ffffff; --fg-2: rgba(255,255,255,.66); --fg-3: rgba(255,255,255,.42); --rule: rgba(255,255,255,.14); --tint: rgba(255,255,255,.04);
   --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif; --gutter: clamp(16px, 4vw, 56px); }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* nothing from the browser's own look: selection, scrollbars, focus rings and search boxes are the site's */
+::selection { background: var(--fg); color: var(--bg); }
+html { scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 8px; }
+button { font: inherit; color: inherit; -webkit-appearance: none; appearance: none; }
+:focus { outline: none; }
+:focus-visible { outline: 1px dashed var(--fg); outline-offset: 3px; }
+input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.65 var(--body); -webkit-font-smoothing: antialiased; transition: background-color .45s, color .45s; }
 a { color: inherit; }
@@ -66,19 +76,56 @@ td { color: var(--fg-2); }
 .table-wrap { overflow-x: auto; }
 
 /* the playground: the model on the left, its options on the right, the code it takes underneath */
-.play { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; margin-top: 18px; }
+.play { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); min-width: 0; border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; margin-top: 18px; }
 .stage { position: relative; min-height: 340px; border-right: 1px solid var(--rule);
   background: repeating-linear-gradient(45deg, var(--tint) 0 12px, transparent 12px 24px); }
 .stage blueprint-model { position: absolute; inset: 0; aspect-ratio: auto; height: 100%; }
-.opts { padding: 18px; display: grid; gap: 14px; align-content: start; }
-.opts label.f { display: grid; gap: 6px; font: 500 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); }
-.opts select { font: 500 13px/1 var(--mono); color: var(--fg); background: var(--bg); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; }
-.checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
-.checks label { display: flex; align-items: center; gap: 8px; font: 400 13px/1.2 var(--mono); color: var(--fg-2); cursor: pointer; }
-.checks input { accent-color: var(--fg); width: 15px; height: 15px; }
-.range { display: flex; align-items: center; gap: 10px; }
-.range input { flex: 1; accent-color: var(--fg); }
-.range output { min-width: 86px; text-align: right; font: 400 12px/1 var(--mono); letter-spacing: 0; text-transform: none; color: var(--fg-2); }
+.opts { padding: 18px; display: grid; gap: 18px; align-content: start; min-width: 0; }
+.opts .f { display: grid; gap: 8px; min-width: 0; }
+.opts .k { font: 500 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* the dropdown */
+.dd { position: relative; }
+.dd-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; text-align: left;
+  font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg); background: transparent;
+  border: 1px solid var(--rule); border-radius: 999px; padding: 12px 16px; transition: border-color .2s; }
+.dd-btn::after { content: ""; flex: none; width: 6px; height: 6px; border-right: 1.5px solid var(--fg); border-bottom: 1.5px solid var(--fg); transform: translateY(-30%) rotate(45deg); transition: transform .2s; }
+.dd-btn[aria-expanded="true"]::after { transform: translateY(20%) rotate(225deg); }
+.dd-btn:hover, .dd-btn[aria-expanded="true"] { border-color: var(--fg); }
+.dd-list { position: absolute; z-index: 6; top: calc(100% + 6px); left: 0; right: 0; max-height: min(340px, 60vh); overflow: auto; margin: 0; padding: 5px; list-style: none;
+  background: var(--bg); border: 1px solid var(--rule); border-radius: 14px; box-shadow: 0 18px 40px rgba(0,0,0,.28); outline: none; overscroll-behavior: contain; }
+.dd-list[hidden] { display: none; }
+.dd-list li { padding: 10px 12px; border-radius: 9px; cursor: pointer; font: 500 12px/1.2 var(--mono); letter-spacing: .06em; color: var(--fg-2); }
+.dd-list li.hi { background: var(--tint); color: var(--fg); }
+.dd-list li[aria-selected="true"] { background: var(--fg); color: var(--bg); }
+.dd-list li.grp { cursor: default; padding: 12px 12px 6px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-3); background: none; }
+.dd-list li.grp:not(:first-child) { margin-top: 4px; border-top: 1px solid var(--rule); border-radius: 0; }
+/* the swatches inside the playground carry the same look as the top bar's */
+.opts .themes button[aria-checked="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--fg); }
+/* segmented control and toggles */
+.seg { display: inline-flex; padding: 3px; border: 1px solid var(--rule); border-radius: 999px; }
+.seg button { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2); background: transparent; border: 0;
+  border-radius: 999px; padding: 9px 12px; cursor: pointer; transition: background-color .2s, color .2s; }
+.seg button:hover { color: var(--fg); }
+.seg button[aria-checked="true"] { background: var(--fg); color: var(--bg); }
+.togs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tog { display: inline-flex; align-items: center; gap: 8px; font: 500 11px/1 var(--mono); letter-spacing: .06em; color: var(--fg-2); background: transparent;
+  border: 1px solid var(--rule); border-radius: 999px; padding: 9px 12px 9px 10px; cursor: pointer; transition: background-color .2s, color .2s, border-color .2s; }
+.tog::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; transition: background-color .2s; }
+.tog:hover { color: var(--fg); border-color: var(--fg); }
+.tog[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.tog[aria-pressed="true"]::before { background: currentColor; }
+/* sliders: a hairline track that fills to the thumb */
+.range { display: flex; align-items: center; gap: 12px; }
+.range output { min-width: 86px; text-align: right; font: 400 12px/1 var(--mono); color: var(--fg-2); }
+input[type="range"] { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 24px; margin: 0; background: transparent; cursor: pointer; --p: 50%; }
+input[type="range"]::-webkit-slider-runnable-track { height: 2px; border-radius: 2px; background: linear-gradient(to right, var(--fg) var(--p), var(--rule) var(--p)); }
+input[type="range"]::-moz-range-track { height: 2px; border-radius: 2px; background: var(--rule); }
+input[type="range"]::-moz-range-progress { height: 2px; background: var(--fg); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -7px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--fg); transition: transform .15s; }
+input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--fg); }
+input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); }
+input[type="range"]:focus-visible { outline: 1px dashed var(--fg); outline-offset: 4px; }
 .acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .play .code { grid-column: 1 / -1; margin: 0; border: 0; border-top: 1px solid var(--rule); border-radius: 0; }
 
@@ -93,7 +140,7 @@ td { color: var(--fg-2); }
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
   .toc { display: none; }
-  .play { grid-template-columns: 1fr; }
+  .play { grid-template-columns: minmax(0, 1fr); }
   .stage { border-right: 0; border-bottom: 1px solid var(--rule); min-height: 280px; }
 }
 @media (max-width: 560px) { .topbar .mark { display: none; } .topbar { justify-content: flex-end; } }
@@ -130,23 +177,37 @@ td { color: var(--fg-2); }
       <div class="play">
         <div class="stage" id="stage"></div>
         <div class="opts">
-          <label class="f">Model <select id="p-model"></select></label>
-          <label class="f">Theme <select id="p-theme"><option>dark</option><option>light</option><option>amber</option><option>navy</option><option>lime</option>
-            <option>dark:inv</option><option>light:inv</option><option>amber:inv</option><option>navy:inv</option><option>lime:inv</option></select></label>
-          <label class="f">Render <select id="p-render"><option value="lines">Lines</option><option value="shaded">Shaded</option><option value="photo">Photo</option></select></label>
-          <div class="checks">
-            <label><input type="checkbox" data-o="animation"> animation</label>
-            <label><input type="checkbox" data-o="transparent"> transparent</label>
-            <label><input type="checkbox" data-o="xray" checked> xray</label>
-            <label><input type="checkbox" data-o="exploded"> exploded</label>
-            <label><input type="checkbox" data-o="labels"> labels</label>
-            <label><input type="checkbox" data-o="controls"> controls</label>
-            <label><input type="checkbox" data-o="autorotate"> autorotate</label>
-            <label><input type="checkbox" data-o="interactive" checked> interactive</label>
-            <label><input type="checkbox" data-o="locked" checked> locked</label>
+          <div class="f"><span class="k" id="k-model">Model</span>
+            <div class="dd" id="dd-model">
+              <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="k-model dd-val"><span id="dd-val"></span></button>
+              <ul class="dd-list" role="listbox" aria-labelledby="k-model" tabindex="-1" hidden></ul>
+            </div>
           </div>
-          <label class="f">Angle <span class="range"><input type="range" id="p-angle" min="-180" max="180" step="5" value="45"><output id="o-angle">45°</output></span></label>
-          <label class="f">Elevation <span class="range"><input type="range" id="p-elev" min="-20" max="80" step="5" value="25"><output id="o-elev">model's own</output></span></label>
+          <div class="f"><span class="k">Theme</span>
+            <div class="row"><div class="themes" id="p-theme" role="radiogroup" aria-label="Theme"></div><button type="button" class="tog" id="p-inv" aria-pressed="false">Invert</button></div>
+          </div>
+          <div class="f"><span class="k">Render</span>
+            <div class="seg" id="p-render" role="radiogroup" aria-label="Render"><button type="button" data-v="lines">Lines</button><button type="button" data-v="shaded">Shaded</button><button type="button" data-v="photo">Photo</button></div>
+          </div>
+          <div class="f"><span class="k">Options</span>
+            <div class="togs">
+              <button type="button" class="tog" data-o="animation" aria-pressed="false">animation</button>
+              <button type="button" class="tog" data-o="transparent" aria-pressed="false">transparent</button>
+              <button type="button" class="tog" data-o="xray" aria-pressed="true">xray</button>
+              <button type="button" class="tog" data-o="exploded" aria-pressed="false">exploded</button>
+              <button type="button" class="tog" data-o="labels" aria-pressed="false">labels</button>
+              <button type="button" class="tog" data-o="controls" aria-pressed="false">controls</button>
+              <button type="button" class="tog" data-o="autorotate" aria-pressed="false">autorotate</button>
+              <button type="button" class="tog" data-o="interactive" aria-pressed="true">interactive</button>
+              <button type="button" class="tog" data-o="locked" aria-pressed="true">locked</button>
+            </div>
+          </div>
+          <div class="f"><span class="k" id="k-angle">Angle</span>
+            <div class="range"><input type="range" id="p-angle" min="-180" max="180" step="5" value="45" aria-labelledby="k-angle"><output id="o-angle">45°</output></div>
+          </div>
+          <div class="f"><span class="k" id="k-elev">Elevation</span>
+            <div class="range"><input type="range" id="p-elev" min="-20" max="80" step="5" value="25" aria-labelledby="k-elev"><output id="o-elev">model's own</output></div>
+          </div>
           <div class="acts"><button class="pill" id="a-tour">Tour</button><button class="pill" id="a-reset">Reset</button></div>
         </div>
         <div class="code"><span class="tag">HTML</span><button class="pill" data-copy-from="p-code">Copy</button><pre id="p-code"></pre></div>
@@ -333,51 +394,105 @@ img.src = thumbnail("gameboy");</pre></div>
       const [cur, inv] = theme.split(":");
       theme = t === cur ? (inv === "inv" ? t : t + ":inv") : t;
       store.set("blueprints-theme", theme); paint();
-      document.getElementById("p-theme").value = theme; update();
+      if (window.__pgTheme) window.__pgTheme(theme);
     });
     themesEl.appendChild(b);
   });
   paint();
 
   // ---------- the playground ----------
+  // the controls are the site's own: a dropdown, swatches, a segmented control, toggles and sliders
   const $ = id => document.getElementById(id);
-  const sel = $("p-model");
-  models.forEach(m => sel.add(new Option(m.label, m.id)));
-  sel.value = "gameboy";
-  $("p-theme").value = theme;
-  $("p-render").value = "photo";
+  const S = { model: "gameboy", theme: theme.split(":")[0], inv: theme.split(":")[1] === "inv", render: "photo", elevTouched: false };
   const el = document.createElement("blueprint-model");
   $("stage").appendChild(el);
-  const checks = [...document.querySelectorAll("[data-o]")];
+  const toggles = [...document.querySelectorAll(".togs .tog")];
   const DEFAULT_ON = { xray: true, interactive: true, locked: true };
-  let elevTouched = false;
-  $("p-elev").addEventListener("input", () => { elevTouched = true; });
+  const on = b => b.getAttribute("aria-pressed") === "true";
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // model: a dropdown listing every model by category, with the keyboard too
+  const dd = $("dd-model"), ddBtn = dd.querySelector(".dd-btn"), ddList = dd.querySelector(".dd-list");
+  let ddOpts = [], hi = 0;
+  models.forEach((m, i) => {
+    if (i === 0 || models[i - 1].category !== m.category) { const h = document.createElement("li"); h.className = "grp"; h.setAttribute("role", "presentation"); h.textContent = m.category; ddList.appendChild(h); }
+    const li = document.createElement("li");
+    li.setAttribute("role", "option"); li.id = "dd-" + m.id; li.dataset.id = m.id; li.textContent = m.label;
+    li.addEventListener("mousedown", e => e.preventDefault());
+    li.addEventListener("click", () => { pick(m.id); closeDd(); ddBtn.focus(); });
+    li.addEventListener("pointermove", () => mark(ddOpts.indexOf(li)));
+    ddList.appendChild(li); ddOpts.push(li);
+  });
+  function mark(i) {
+    hi = Math.max(0, Math.min(ddOpts.length - 1, i));
+    ddOpts.forEach((li, j) => li.classList.toggle("hi", j === hi));
+    ddList.setAttribute("aria-activedescendant", ddOpts[hi].id);
+    ddOpts[hi].scrollIntoView({ block: "nearest" });
+  }
+  function openDd() { ddList.hidden = false; ddBtn.setAttribute("aria-expanded", "true"); mark(ddOpts.findIndex(li => li.dataset.id === S.model)); ddList.focus(); }
+  function closeDd() { ddList.hidden = true; ddBtn.setAttribute("aria-expanded", "false"); }
+  function pick(id) { S.model = id; update(); }
+  ddBtn.addEventListener("click", () => ddList.hidden ? openDd() : closeDd());
+  ddBtn.addEventListener("keydown", e => { if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); openDd(); } });
+  ddList.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown") { e.preventDefault(); mark(hi + 1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); mark(hi - 1); }
+    else if (e.key === "Home") { e.preventDefault(); mark(0); }
+    else if (e.key === "End") { e.preventDefault(); mark(ddOpts.length - 1); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(ddOpts[hi].dataset.id); closeDd(); ddBtn.focus(); }
+    else if (e.key === "Escape" || e.key === "Tab") { closeDd(); ddBtn.focus(); }
+  });
+  document.addEventListener("pointerdown", e => { if (!dd.contains(e.target)) closeDd(); });
+
+  // theme: the swatches, and invert
+  const themeBox = $("p-theme");
+  Object.entries(THEMES).forEach(([t, [bg, fg]]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.t = t; b.setAttribute("role", "radio"); b.setAttribute("aria-label", t);
+    b.style.setProperty("--sw-bg", bg); b.style.setProperty("--sw-fg", fg);
+    b.addEventListener("click", () => { S.theme = t; update(); });
+    themeBox.appendChild(b);
+  });
+  $("p-inv").addEventListener("click", () => { S.inv = !S.inv; update(); });
+  // render: a segmented control
+  const renderBtns = [...$("p-render").querySelectorAll("button")];
+  renderBtns.forEach(b => { b.setAttribute("role", "radio"); b.addEventListener("click", () => { S.render = b.dataset.v; update(); }); });
+  // options: toggles
+  toggles.forEach(b => b.addEventListener("click", () => { b.setAttribute("aria-pressed", String(!on(b))); update(); }));
+  // the sliders fill up to their thumb
+  const fill = r => r.style.setProperty("--p", ((r.value - r.min) / (r.max - r.min) * 100) + "%");
+  $("p-elev").addEventListener("input", () => { S.elevTouched = true; });
+  [$("p-angle"), $("p-elev")].forEach(r => { fill(r); r.addEventListener("input", () => { fill(r); update(); }); });
+
   function update() {
-    el.model = sel.value;
-    el.theme = $("p-theme").value;
-    el.render = $("p-render").value;
-    checks.forEach(c => { el[c.dataset.o] = c.dataset.o === "autorotate" ? (c.checked ? 15 : 0) : c.checked; });
+    const themeVal = S.theme + (S.inv ? ":inv" : "");
+    el.model = S.model; el.theme = themeVal; el.render = S.render;
+    toggles.forEach(b => { const k = b.dataset.o; el[k] = k === "autorotate" ? (on(b) ? 15 : 0) : on(b); });
     const ang = +$("p-angle").value, elv = +$("p-elev").value;
-    el.angle = ang; el.elevation = elevTouched ? elv : null;
-    $("o-angle").textContent = ang + "°"; $("o-elev").textContent = elevTouched ? elv + "°" : "model's own";
+    el.angle = ang; el.elevation = S.elevTouched ? elv : null;
+    // the controls show the state
+    $("dd-val").textContent = (models.find(m => m.id === S.model) || {}).label || S.model;
+    ddOpts.forEach(li => li.setAttribute("aria-selected", String(li.dataset.id === S.model)));
+    themeBox.querySelectorAll("button").forEach(b => { const sel = b.dataset.t === S.theme; b.setAttribute("aria-checked", String(sel)); b.setAttribute("aria-pressed", String(sel)); b.classList.toggle("inv", sel && S.inv); });
+    $("p-inv").setAttribute("aria-pressed", String(S.inv));
+    renderBtns.forEach(b => b.setAttribute("aria-checked", String(b.dataset.v === S.render)));
+    $("o-angle").textContent = ang + "°"; $("o-elev").textContent = S.elevTouched ? elv + "°" : "model's own";
     // the code: only what differs from the defaults
-    const attrs = [["model", el.model]];
-    if (el.theme !== "dark") attrs.push(["theme", el.theme]);
-    if (el.render !== "lines") attrs.push(["render", el.render]);
-    checks.forEach(c => {
-      const k = c.dataset.o;
-      if (k === "autorotate") { if (c.checked) attrs.push(["autorotate", "15"]); }
-      else if (c.checked !== !!DEFAULT_ON[k]) attrs.push([k, c.checked ? null : "false"]);
+    const attrs = [["model", S.model]];
+    if (themeVal !== "dark") attrs.push(["theme", themeVal]);
+    if (S.render !== "lines") attrs.push(["render", S.render]);
+    toggles.forEach(b => {
+      const k = b.dataset.o;
+      if (k === "autorotate") { if (on(b)) attrs.push(["autorotate", "15"]); }
+      else if (on(b) !== !!DEFAULT_ON[k]) attrs.push([k, on(b) ? null : "false"]);
     });
     if (ang !== 45) attrs.push(["angle", String(ang)]);
-    if (elevTouched) attrs.push(["elevation", String(elv)]);
+    if (S.elevTouched) attrs.push(["elevation", String(elv)]);
     const tag = attrs.map(([k, v]) => v === null ? `<span class="c-attr">${k}</span>` : `<span class="c-attr">${k}</span>=<span class="c-str">"${esc(v)}"</span>`).join(" ");
     $("p-code").innerHTML = esc(`<script type="module" src="https://cdn.jsdelivr.net/npm/blueprintspace@${V}/index.js"><\/script>`) + "\n\n" +
       `<span class="c-tag">&lt;blueprint-model</span> ${tag}<span class="c-tag">&gt;&lt;/blueprint-model&gt;</span>`;
   }
-  [sel, $("p-theme"), $("p-render"), ...checks].forEach(x => x.addEventListener("change", update));
-  [$("p-angle"), $("p-elev")].forEach(x => x.addEventListener("input", update));
+  window.__pgTheme = t => { [S.theme, S.inv] = [t.split(":")[0], t.split(":")[1] === "inv"]; update(); };
   $("a-tour").onclick = () => el.tour();
   $("a-reset").onclick = () => el.reset();
   update();
@@ -389,7 +504,7 @@ img.src = thumbnail("gameboy");</pre></div>
     b.type = "button";
     b.innerHTML = `<div class="pic" style="--img:url('${PKG}thumbs/${m.id}.webp')"></div><b></b><small></small>`;
     b.querySelector("b").textContent = m.label; b.querySelector("small").textContent = m.id;
-    b.onclick = () => { sel.value = m.id; update(); $("playground").scrollIntoView({ behavior: "smooth" }); };
+    b.onclick = () => { pick(m.id); $("playground").scrollIntoView({ behavior: "smooth" }); };
     grid.appendChild(b);
   });
 

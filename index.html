@@ -14,6 +14,16 @@
    build_gallery.py fills in the pages; the grid's pictures are thumbs/<id>.webp (tools/thumbs.js). */
 :root { --bg: #141414; --fg: #ffffff; --fg-2: rgba(255,255,255,.64); --fg-3: rgba(255,255,255,.4); --rule: rgba(255,255,255,.14); --tile: rgba(255,255,255,.025);
   --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; --display: "Archivo", "Helvetica Neue", Arial, sans-serif; }
+/* nothing from the browser's own look: selection, scrollbars, focus rings and search boxes are the site's */
+* { -webkit-tap-highlight-color: transparent; }
+::selection { background: var(--fg); color: var(--bg); }
+html { scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 8px; }
+:focus { outline: none; }
+:focus-visible { outline: 1px dashed var(--fg); outline-offset: 3px; }
+input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); overflow: hidden; transition: background-color .45s ease, color .45s ease; }
 iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; opacity: 0; transition: opacity .35s ease; }
 iframe.shown { opacity: 1; }
@@ -114,6 +124,13 @@ iframe.shown { opacity: 1; }
 
   // styles for the model dropdown, added to each page; it uses the page's own theme colours
   const CSS = `
+    * { -webkit-tap-highlight-color: transparent; }
+    ::selection { background: var(--fg); color: var(--bg); }
+    html { scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 8px; }
+    input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
     .bp-controls { display: flex; align-items: center; gap: 10px; pointer-events: auto; }
     .bp-controls * { pointer-events: auto; }
     .bp-model { position: relative; display: flex; align-items: center; }
