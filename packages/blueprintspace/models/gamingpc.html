@@ -396,7 +396,10 @@ window.GPC_GEOMETRY.data = "JPek7fAAJPdcEvAAJPdcEoAlJPek7YAlBPek7fAABPdcEoAlBPdc
   // (or with window.BLUEPRINT_EMBED set to the same options). It hides its own chrome, takes the options it's given
   // without saving them, and answers postMessage commands from the host page:
   //   { type: "blueprint", action: "set", key, value }   key: theme, render, transparent, controls, labels, xray,
-  //                                                      exploded, animation, autorotate, interactive
+  //                                                      exploded, animation, autorotate, interactive, angle, elevation, locked
+  // By default an embed opens at 45 degrees round from the front, towards the model's right, and holds that view
+  // (locked): the pointer can't turn it, though it can still zoom and take it apart. angle and elevation set the view in
+  // degrees; locked=0 lets people turn it.
   //   { type: "blueprint", action: "explode" | "animate" | "tour" | "reset" }   (toggles and one-offs)
   // and tells the host when it's ready: { type: "blueprint", event: "ready", title, state }.
   const EMBED = (() => {
@@ -418,8 +421,14 @@ window.GPC_GEOMETRY.data = "JPek7fAAJPdcEvAAJPdcEoAlJPek7YAlBPek7fAABPdcEoAlBPdc
     const press = key => document.body.dispatchEvent(new KeyboardEvent("keydown", { key, code: key === " " ? "Space" : "", bubbles: true }));
     // the screen animation is a toggle on "/": keep track of it so the host can set it on or off
     let animation = false, spin = 0, still = false;
+    // the view: an angle round the model and a height (null: the model's own), held while locked
+    let angle = 45, elevation = null, locked = true, lockYaw = 0, lockPitch = 0, booting = true;
+    function aim() {
+      applyView({ az: angle, el: elevation === null ? V.el : elevation }, booting);
+      lockYaw = drag.tYaw; lockPitch = drag.tPitch;
+    }
     addEventListener("keydown", e => { if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) animation = !animation; }, true);
-    const state = {};
+    const state = { angle: 45, locked: true };
     function set(key, v) {
       if (key === "theme") { const [t, inv] = String(v || "dark").split(":"); applyTheme(t, inv === "inv"); }
       else if (key === "render") { if (window.__bpSetStyle) window.__bpSetStyle(RENDER[v] || "blueprint"); }
@@ -431,6 +440,9 @@ window.GPC_GEOMETRY.data = "JPek7fAAJPdcEvAAJPdcEoAlJPek7YAlBPek7fAABPdcEoAlBPdc
       else if (key === "animation") { if (truthy(v) !== animation) press("/"); }
       else if (key === "autorotate") spin = truthy(v) ? (parseFloat(v) || 12) * Math.PI / 180 : 0;   // degrees a second
       else if (key === "interactive") { still = !truthy(v); root.classList.toggle("bp-still", still); }
+      else if (key === "angle") { angle = parseFloat(v); if (!isFinite(angle)) angle = 45; aim(); }
+      else if (key === "elevation") { elevation = v === null || v === "" || !isFinite(parseFloat(v)) ? null : Math.max(-40, Math.min(85, parseFloat(v))); aim(); }
+      else if (key === "locked") { locked = truthy(v); if (locked) aim(); }
       else return;
       state[key] = v;
     }
@@ -446,14 +458,21 @@ window.GPC_GEOMETRY.data = "JPek7fAAJPdcEvAAJPdcEoAlJPek7YAlBPek7fAABPdcEoAlBPdc
     });
     // autorotate turns the model about its vertical axis, as dragging it would
     let lastSpin = performance.now();
-    (function turn(now) {
-      if (spin && !reduceMotion) drag.tYaw += spin * Math.min(0.1, (now - lastSpin) / 1000);
+    const turn = now => {
+      if (booting) { lastSpin = now; return requestAnimationFrame(turn); }
+      const step = spin && !reduceMotion ? spin * Math.min(0.1, (now - lastSpin) / 1000) : 0;
+      // locked: whatever the pointer or the keys did, the view goes back to its angle (autorotate moves that angle)
+      if (locked) { lockYaw += step; drag.tYaw = lockYaw; drag.tPitch = lockPitch; }
+      else drag.tYaw += step;
       lastSpin = now;
       requestAnimationFrame(turn);
-    })(lastSpin);
+    };   // started once the rest of the engine (the camera's drag state) exists
+    requestAnimationFrame(turn);
     // once the rest of the page (the render styles included) has run, apply the options and say so
     setTimeout(() => {
+      aim();
       Object.entries(EMBED).forEach(([k, v]) => set(k, v));
+      booting = false;
       try { parent.postMessage({ type: "blueprint", event: "ready", title: document.title, state }, "*"); } catch (e) {}
     }, 0);
   }

@@ -37,6 +37,8 @@ or per element: `<blueprint-model base="/blueprintspace/" model="v8">`.
 
 ## Attributes and properties
 
+By default a model opens at a 45° view from its right side and stays there: people can zoom in and take it apart but not turn it. Change the view with `angle` and `elevation`, or set `locked="false"` to let them turn it.
+
 Every option is both an HTML attribute and a JavaScript property on the element. Boolean attributes are on when present (or `"true"`), off with `"false"`.
 
 | Attribute / property | Values | Default | |
@@ -50,6 +52,9 @@ Every option is both an HTML attribute and a JavaScript property on the element.
 | `exploded` | `true` taken apart, `false` assembled; absent: comes apart while hovered | hover | live |
 | `labels` | boolean: callout labels on the parts | off | live |
 | `controls` | boolean: the model page's own buttons, title and hints | off | live |
+| `angle` | degrees round from the front towards the model's right side | `45` | live |
+| `elevation` | degrees above the model | the model's own | live |
+| `locked` | boolean: hold the view at its angle so the pointer can't turn it (zoom and explode still work) | on | live |
 | `autorotate` | boolean, or degrees a second (`autorotate="20"`) | off | live |
 | `interactive` | boolean: turn, zoom and take it apart with the pointer | on | live |
 | `motion` | boolean: moving parts and camera easing; `false` keeps it all still | on | reloads |
@@ -67,6 +72,8 @@ el.xray = false;         // no hidden edges
 el.exploded = true;      // take it apart (false: put it together, null: hover again)
 el.autorotate = 20;      // turn at 20 degrees a second (0 stops)
 el.interactive = false;  // a still picture that ignores the pointer
+el.angle = 90;           // see it from the right side
+el.locked = false;       // let people turn it
 el.theme = "navy:inv";
 el.render = "shaded";
 ```

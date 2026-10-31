@@ -5,6 +5,7 @@
  *   <blueprint-model model="gameboy" theme="amber" render="photo"></blueprint-model>
  *
  *   el.animation = true; el.transparent = true; el.xray = false; el.exploded = true; el.autorotate = 20;
+ *   el.angle = 90; el.elevation = 10; el.locked = false;   // a view from the side, free to turn
  *
  * Each model runs in its own sandboxed iframe (so its scripts and styles can't touch your page) and is loaded
  * from the CDN by default; set `base` (or BlueprintModel.base) to serve the package's models/ folder yourself.
@@ -19,7 +20,7 @@ const here = (() => { try { return new URL(".", import.meta.url).href; } catch (
 const defaultBase = /(^https?:\/\/(cdn\.jsdelivr\.net|unpkg\.com|esm\.sh))/.test(here) ? here : CDN;
 
 // options that change live in the running model, and those that need it reloaded
-const LIVE = ["theme", "render", "transparent", "controls", "labels", "xray", "exploded", "animation", "autorotate", "interactive"];
+const LIVE = ["theme", "render", "transparent", "controls", "labels", "xray", "exploded", "animation", "autorotate", "interactive", "angle", "elevation", "locked"];
 const RELOAD = ["motion", "background"];
 const BOOLEAN = ["transparent", "controls", "labels", "xray", "animation", "interactive", "motion"];
 // a boolean attribute: present (or "true"/"1"/"on") is on, "false"/"0"/"off" is off, absent is the default
@@ -108,6 +109,15 @@ export class BlueprintModel extends HTMLElement {
   /** Let people turn, zoom and take the model apart with the pointer (on by default). */
   get interactive() { return parse(this.getAttribute("interactive")) !== false; }
   set interactive(v) { this._bool("interactive", v); }
+  /** The view's angle round the model, in degrees from the front towards its right side. 45 by default. */
+  get angle() { const v = parseFloat(this.getAttribute("angle")); return isFinite(v) ? v : 45; }
+  set angle(v) { this.setAttribute("angle", String(v)); }
+  /** How high the view is, in degrees above the model; null (no attribute) uses the model's own. */
+  get elevation() { const v = parseFloat(this.getAttribute("elevation")); return isFinite(v) ? v : null; }
+  set elevation(v) { if (v === null || v === undefined || v === "") this.removeAttribute("elevation"); else this.setAttribute("elevation", String(v)); }
+  /** Hold the view at its angle so the pointer can't turn it (it can still zoom and take it apart). On by default. */
+  get locked() { return parse(this.getAttribute("locked")) !== false; }
+  set locked(v) { this._bool("locked", v); }
   /** Moving parts (fans, reels, cranks) and camera easing; off keeps everything still. On by default. */
   get motion() { return parse(this.getAttribute("motion")) !== false; }
   set motion(v) { this._bool("motion", v); }
@@ -131,7 +141,9 @@ export class BlueprintModel extends HTMLElement {
     if (name === "theme" || name === "render") return v;
     if (name === "exploded") return v === null ? "hover" : parse(v);
     if (name === "autorotate") return this.autorotate || false;
-    if (name === "xray" || name === "interactive") return parse(v) !== false;
+    if (name === "xray" || name === "interactive" || name === "locked") return parse(v) !== false;
+    if (name === "angle") return this.angle;
+    if (name === "elevation") return this.elevation === null ? "" : this.elevation;
     return parse(v) === true;
   }
   _url() {
