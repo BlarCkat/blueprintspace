@@ -1,0 +1,50 @@
+{
+  "name": "blueprintspace",
+  "version": "1.0.0",
+  "description": "Interactive 3D blueprint illustrations (consoles, computers, engines, vehicles...) as a drop-in <blueprint-model> web component: line drawing, shaded and photo styles, exploded views, animations.",
+  "type": "module",
+  "main": "./index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./models.json": "./models.json",
+    "./models/*": "./models/*",
+    "./thumbs/*": "./thumbs/*"
+  },
+  "jsdelivr": "./index.js",
+  "unpkg": "./index.js",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "models.json",
+    "models/",
+    "thumbs/",
+    "demo.html",
+    "README.md"
+  ],
+  "sideEffects": [
+    "./index.js"
+  ],
+  "keywords": [
+    "3d",
+    "illustration",
+    "blueprint",
+    "web-component",
+    "custom-element",
+    "three.js",
+    "exploded-view",
+    "product",
+    "hardware"
+  ],
+  "homepage": "https://github.com/BlarCkat/blueprintspace",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BlarCkat/blueprintspace.git",
+    "directory": "packages/blueprintspace"
+  },
+  "license": "MIT"
+}

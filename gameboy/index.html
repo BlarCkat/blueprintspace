@@ -505,7 +505,8 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
   "use strict";
   const M = window.BLUEPRINT_MODEL;
   const G = M.geometry;
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // reduced motion: the system setting, or an embed asked to keep still (motion=0)
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches || /^#embed\b.*[&]motion=(0|false)\b/.test(location.hash) || !!(window.BLUEPRINT_EMBED && /^(0|false)$/.test(String(window.BLUEPRINT_EMBED.motion)));
   const touchMode = matchMedia("(hover: none)").matches;
   const root = document.documentElement;
 
@@ -536,7 +537,7 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
       b.setAttribute("aria-pressed", String(on));
       b.classList.toggle("inv", on && inverted);
     });
-    try { localStorage.setItem(M.themeKey, theme + (inverted ? ":inv" : "")); } catch (e) {}
+    if (!root.classList.contains("bp-embed")) try { localStorage.setItem(M.themeKey, theme + (inverted ? ":inv" : "")); } catch (e) {}   // an embed doesn't save its theme
     if (window.__bpRecolor) window.__bpRecolor();
   }
   let saved = "";
@@ -544,6 +545,73 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
   applyTheme(saved.split(":")[0], saved.split(":")[1] === "inv");
   // a new swatch switches theme; the active one again flips its background and lines
   swatches.forEach(b => b.addEventListener("click", () => applyTheme(b.dataset.t, b.dataset.t === theme ? !inverted : false)));
+
+  // ---------- embedded on another site (the blueprintspace package's <blueprint-model>) ----------
+  // The page is opened in an iframe at  model.html#embed&theme=amber:inv&render=photo&transparent=1&xray=0&animation=1...
+  // (or with window.BLUEPRINT_EMBED set to the same options). It hides its own chrome, takes the options it's given
+  // without saving them, and answers postMessage commands from the host page:
+  //   { type: "blueprint", action: "set", key, value }   key: theme, render, transparent, controls, labels, xray,
+  //                                                      exploded, animation, autorotate, interactive
+  //   { type: "blueprint", action: "explode" | "animate" | "tour" | "reset" }   (toggles and one-offs)
+  // and tells the host when it's ready: { type: "blueprint", event: "ready", title, state }.
+  const EMBED = (() => {
+    if (/^#embed\b/.test(location.hash)) return Object.fromEntries(new URLSearchParams(location.hash.slice(1).replace(/^embed&?/, "")));
+    return window.BLUEPRINT_EMBED || null;
+  })();
+  if (EMBED) {
+    root.classList.add("bp-embed");
+    const css = document.createElement("style");
+    css.textContent = ".bp-embed:not(.bp-controls) .page, .bp-embed:not(.bp-controls) .hint, .bp-embed:not(.bp-controls) .dwg," +
+      ".bp-embed:not(.bp-controls) .viewbar, .bp-embed:not(.bp-controls) .panpad, .bp-embed:not(.bp-controls) .exportbar { display: none !important; }" +
+      ".bp-embed:not(.bp-labels) #hotspots { display: none !important; }" +
+      ".bp-embed .sheet { display: none; }" +
+      "html.bp-transparent, .bp-transparent body { background: transparent !important; }" +
+      ".bp-still #scene { pointer-events: none; }";
+    document.head.appendChild(css);
+    const truthy = v => v === true || v === "" || v === "1" || v === "true" || v === "on";
+    const RENDER = { lines: "blueprint", shaded: "realistic", photo: "photo", blueprint: "blueprint", realistic: "realistic" };
+    const press = key => document.body.dispatchEvent(new KeyboardEvent("keydown", { key, code: key === " " ? "Space" : "", bubbles: true }));
+    // the screen animation is a toggle on "/": keep track of it so the host can set it on or off
+    let animation = false, spin = 0, still = false;
+    addEventListener("keydown", e => { if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) animation = !animation; }, true);
+    const state = {};
+    function set(key, v) {
+      if (key === "theme") { const [t, inv] = String(v || "dark").split(":"); applyTheme(t, inv === "inv"); }
+      else if (key === "render") { if (window.__bpSetStyle) window.__bpSetStyle(RENDER[v] || "blueprint"); }
+      else if (key === "transparent" || key === "background") root.classList.toggle("bp-transparent", key === "background" ? v === "transparent" : truthy(v));
+      else if (key === "controls") root.classList.toggle("bp-controls", truthy(v));
+      else if (key === "labels") { root.classList.toggle("bp-labels", truthy(v)); if (truthy(v)) setLabels(true); }
+      else if (key === "xray") setXray(truthy(v));
+      else if (key === "exploded") lock(v === "hover" || v === null || v === undefined ? null : truthy(v));
+      else if (key === "animation") { if (truthy(v) !== animation) press("/"); }
+      else if (key === "autorotate") spin = truthy(v) ? (parseFloat(v) || 12) * Math.PI / 180 : 0;   // degrees a second
+      else if (key === "interactive") { still = !truthy(v); root.classList.toggle("bp-still", still); }
+      else return;
+      state[key] = v;
+    }
+    addEventListener("message", e => {
+      const d = e.data;
+      if (!d || d.type !== "blueprint") return;
+      if (d.action === "set") set(d.key, d.value);
+      else if (d.action === "theme" || d.action === "render") set(d.action, d.value);
+      else if (d.action === "explode") lock(!(explodeTarget === 1));
+      else if (d.action === "animate") press("/");
+      else if (d.action === "tour") press(".");
+      else if (d.action === "reset") press("r");
+    });
+    // autorotate turns the model about its vertical axis, as dragging it would
+    let lastSpin = performance.now();
+    (function turn(now) {
+      if (spin && !reduceMotion) drag.tYaw += spin * Math.min(0.1, (now - lastSpin) / 1000);
+      lastSpin = now;
+      requestAnimationFrame(turn);
+    })(lastSpin);
+    // once the rest of the page (the render styles included) has run, apply the options and say so
+    setTimeout(() => {
+      Object.entries(EMBED).forEach(([k, v]) => set(k, v));
+      try { parent.postMessage({ type: "blueprint", event: "ready", title: document.title, state }, "*"); } catch (e) {}
+    }, 0);
+  }
 
   const HINT0 = (document.getElementById("hint") || {}).innerHTML || "";   // the page's own hint, before a touch hint replaces it
   if (touchMode && M.touchHint) document.getElementById("hint").textContent = M.touchHint + "; drag to turn it, pinch to zoom, two fingers to pan.";
@@ -2670,6 +2738,8 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
       scene.environment = photo ? photoEnv : real ? env : null;
       scene.background = photo ? backdrop : null;
       document.documentElement.classList.toggle("bp-photo", photo);
+      // the page's colours change with the photo set's ink: refresh the fills and lines that read them
+      if (window.__bpRecolor) window.__bpRecolor();
       renderer.shadowMap.enabled = photo;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       // filmic tone mapping and sRGB output for the shaded parts; the page's own flat materials
@@ -2696,6 +2766,8 @@ window.BP_rr = function (ctx, x, y, w, h, r) {
         mat.transparent = fade < 0.99 || own < 1; mat.opacity = own * fade; mat.depthWrite = fade > 0.6 && own > 0.6;
         if (!mat.userData.glow) mat.emissive.copy(mat.userData.base).multiplyScalar(Math.max(0, k - 1.05) * 0.45);
       });
+      // an embed asked to be transparent keeps the photo's lighting and shadow but drops its backdrop
+      if (style === "photo") scene.background = root.classList.contains("bp-transparent") ? null : backdrop;
       if (style === "photo" && floor) {
         // the floor sits just under the lowest part as the model opens and closes
         const e = explode * explode * (3 - 2 * explode);
