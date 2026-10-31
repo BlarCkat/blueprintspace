@@ -53,6 +53,8 @@ export class BlueprintModel extends HTMLElement {
       if (e.source !== this._frame.contentWindow || !e.data || e.data.type !== "blueprint") return;
       if (e.data.event === "ready") {
         this._ready = true;
+        // bring the model up to date with options set while it was loading, then anything queued
+        LIVE.forEach(k => { if (this.hasAttribute(k)) this._post({ type: "blueprint", action: "set", key: k, value: this._value(k) }); });
         this._queue.splice(0).forEach(m => this._post(m));
         this.dispatchEvent(new CustomEvent("ready", { detail: { model: this.model, title: e.data.title } }));
       }
