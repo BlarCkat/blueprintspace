@@ -486,6 +486,8 @@
       scene.environment = photo ? photoEnv : real ? env : null;
       scene.background = photo ? backdrop : null;
       document.documentElement.classList.toggle("bp-photo", photo);
+      // the page's colours change with the photo set's ink: refresh the fills and lines that read them
+      if (window.__bpRecolor) window.__bpRecolor();
       renderer.shadowMap.enabled = photo;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       // filmic tone mapping and sRGB output for the shaded parts; the page's own flat materials

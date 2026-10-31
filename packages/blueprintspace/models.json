@@ -1,0 +1,205 @@
+[
+  {
+    "id": "macintosh",
+    "label": "Macintosh 128K",
+    "kind": "desktop",
+    "category": "Computers",
+    "tags": "desktop apple mac 1984 computer"
+  },
+  {
+    "id": "typewriter",
+    "label": "Vintage Typewriter",
+    "kind": "machine",
+    "category": "Computers",
+    "tags": "typewriter vintage retro office keys type mechanical animated"
+  },
+  {
+    "id": "spectre",
+    "label": "Spectre x360 14",
+    "kind": "laptop",
+    "category": "Computers",
+    "tags": "laptop hp convertible notebook 2-in-1"
+  },
+  {
+    "id": "macbookpro",
+    "label": "MacBook Pro 14 (M5)",
+    "kind": "laptop",
+    "category": "Computers",
+    "tags": "laptop apple macbook pro m5 notebook 2025"
+  },
+  {
+    "id": "gamingpc",
+    "label": "Custom Gaming PC",
+    "kind": "desktop",
+    "category": "Computers",
+    "tags": "pc gaming custom build tower desktop rgb gpu cpu aio liquid cooling fans animated"
+  },
+  {
+    "id": "framework",
+    "label": "Framework Laptop 13",
+    "kind": "laptop",
+    "category": "Computers",
+    "tags": "framework laptop 13 repairable modular expansion cards notebook linux"
+  },
+  {
+    "id": "iphone17",
+    "label": "iPhone 17",
+    "kind": "phone",
+    "category": "Phones",
+    "tags": "phone apple smartphone mobile"
+  },
+  {
+    "id": "walkman",
+    "label": "Sony Walkman",
+    "kind": "player",
+    "category": "Audio",
+    "tags": "walkman sony tps-l2 cassette tape player music 1979 retro portable animated"
+  },
+  {
+    "id": "gameboy",
+    "label": "Game Boy",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "game boy gameboy nintendo dmg handheld 1989 retro tetris cartridge"
+  },
+  {
+    "id": "playdate",
+    "label": "Playdate",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "playdate panic handheld crank yellow 1-bit games"
+  },
+  {
+    "id": "gbconcept",
+    "label": "Game Boy Concept",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "game boy concept translucent smoke redesign handheld modern purple"
+  },
+  {
+    "id": "playstation",
+    "label": "PlayStation",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "console sony ps1 psx playstation 1 dualshock controller 1994 games"
+  },
+  {
+    "id": "ps3",
+    "label": "PlayStation 3",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "console sony ps3 cell dualshock 3 sixaxis 2006 games blu-ray"
+  },
+  {
+    "id": "ps4",
+    "label": "PlayStation 4",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "console sony ps4 dualshock 4 2013 games"
+  },
+  {
+    "id": "ps5",
+    "label": "PlayStation 5",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "console sony ps5 dualsense 2020 games"
+  },
+  {
+    "id": "xbox",
+    "label": "Xbox Series X",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "xbox series x microsoft console games 2020 fan"
+  },
+  {
+    "id": "switch",
+    "label": "Nintendo Switch (OLED)",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "nintendo switch oled handheld console joy-con games portable"
+  },
+  {
+    "id": "psp",
+    "label": "PlayStation Portable",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "psp playstation portable sony handheld umd 2004 games"
+  },
+  {
+    "id": "morph",
+    "label": "Morph Handheld",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "morph handheld console concept retro controller screen orange cream design"
+  },
+  {
+    "id": "steam",
+    "label": "Steam Machine",
+    "kind": "console",
+    "category": "Consoles",
+    "tags": "steam machine valve console pc gaming steamos fan led"
+  },
+  {
+    "id": "cpu",
+    "label": "X9 Processor",
+    "kind": "chip",
+    "category": "Components",
+    "tags": "chip cpu desktop socket lga"
+  },
+  {
+    "id": "egpu",
+    "label": "EG-1 eGPU",
+    "kind": "egpu",
+    "category": "Components",
+    "tags": "egpu external gpu graphics card enclosure thunderbolt fans pcie"
+  },
+  {
+    "id": "turbofan",
+    "label": "TF-9 Turbofan",
+    "kind": "engine",
+    "category": "Engines",
+    "tags": "engine jet turbine aircraft"
+  },
+  {
+    "id": "v8",
+    "label": "V8 Engine",
+    "kind": "engine",
+    "category": "Engines",
+    "tags": "v8 engine motor car pushrod small block pistons crankshaft animated"
+  },
+  {
+    "id": "hover",
+    "label": "HV-9 Hover Hauler",
+    "kind": "vehicle",
+    "category": "Vehicles",
+    "tags": "vehicle hover hovercraft futuristic sci-fi spaceship ship hauler"
+  },
+  {
+    "id": "cybertruck",
+    "label": "Cybertruck",
+    "kind": "truck",
+    "category": "Vehicles",
+    "tags": "cybertruck tesla truck pickup electric ev vehicle car"
+  },
+  {
+    "id": "spaceship",
+    "label": "SX-7 Starhopper",
+    "kind": "spaceship",
+    "category": "Vehicles",
+    "tags": "spaceship starship space ship sci-fi shuttle rocket starhopper spacecraft"
+  },
+  {
+    "id": "rubiks",
+    "label": "Rubik's Cube",
+    "kind": "puzzle",
+    "category": "Toys",
+    "tags": "rubiks rubik cube puzzle toy 3x3 speedcube animated"
+  },
+  {
+    "id": "ledcube",
+    "label": "LED Cube",
+    "kind": "gadget",
+    "category": "Gadgets",
+    "tags": "led cube volumetric display voxel light lamp gadget animated red"
+  }
+]

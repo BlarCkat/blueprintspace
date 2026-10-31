@@ -376,7 +376,7 @@ window.WM_GEOMETRY.data = "4Prq/AAA5vrN/AAA0PrE/BwAyPrq/BwA9vq0/AAA5fqj/BwAD/uk/
       b.setAttribute("aria-pressed", String(on));
       b.classList.toggle("inv", on && inverted);
     });
-    try { localStorage.setItem(M.themeKey, theme + (inverted ? ":inv" : "")); } catch (e) {}
+    if (!root.classList.contains("bp-embed")) try { localStorage.setItem(M.themeKey, theme + (inverted ? ":inv" : "")); } catch (e) {}   // an embed doesn't save its theme
     if (window.__bpRecolor) window.__bpRecolor();
   }
   let saved = "";
@@ -384,6 +384,47 @@ window.WM_GEOMETRY.data = "4Prq/AAA5vrN/AAA0PrE/BwAyPrq/BwA9vq0/AAA5fqj/BwAD/uk/
   applyTheme(saved.split(":")[0], saved.split(":")[1] === "inv");
   // a new swatch switches theme; the active one again flips its background and lines
   swatches.forEach(b => b.addEventListener("click", () => applyTheme(b.dataset.t, b.dataset.t === theme ? !inverted : false)));
+
+  // ---------- embedded on another site (the blueprintspace package's <blueprint-model>) ----------
+  // The page is opened in an iframe at  model.html#embed&theme=amber:inv&render=photo&background=transparent&controls=0&labels=0
+  // (or with window.BLUEPRINT_EMBED set to the same options). It hides its own chrome, takes the theme and render
+  // style it's given without saving them, and answers postMessage commands from the host page:
+  //   { type: "blueprint", action: "theme", value: "navy" | "navy:inv" }   { type: "blueprint", action: "render", value: "lines" | "shaded" | "photo" }
+  //   { type: "blueprint", action: "explode" | "animate" | "tour" | "reset" | "labels" | "xray" }
+  // and tells the host when it's ready: { type: "blueprint", event: "ready", title, renders: [...] }.
+  const EMBED = (() => {
+    if (/^#embed\b/.test(location.hash)) return Object.fromEntries(new URLSearchParams(location.hash.slice(1).replace(/^embed&?/, "")));
+    return window.BLUEPRINT_EMBED || null;
+  })();
+  if (EMBED) {
+    root.classList.add("bp-embed");
+    const on = v => v === "1" || v === "true" || v === true;
+    const css = document.createElement("style");
+    css.textContent = (on(EMBED.controls) ? "" : ".bp-embed .page, .bp-embed .hint, .bp-embed .dwg, .bp-embed .viewbar, .bp-embed .panpad, .bp-embed .exportbar { display: none !important; }") +
+      (on(EMBED.labels) ? "" : ".bp-embed #hotspots { display: none !important; }") +
+      ".bp-embed .sheet { display: none; }" +
+      (EMBED.background === "transparent" ? "html.bp-embed, .bp-embed body { background: transparent !important; }" : "") +
+      (EMBED.interactive === "0" ? ".bp-embed #scene { pointer-events: none; }" : "");
+    document.head.appendChild(css);
+    const setTheme = v => { const [t, inv] = String(v || "dark").split(":"); applyTheme(t, inv === "inv"); };
+    if (EMBED.theme) setTheme(EMBED.theme);
+    const RENDER = { lines: "blueprint", shaded: "realistic", photo: "photo", blueprint: "blueprint", realistic: "realistic" };
+    const setRender = v => { if (window.__bpSetStyle) window.__bpSetStyle(RENDER[v] || "blueprint"); };
+    const KEYS = { explode: " ", animate: "/", tour: ".", reset: "r", labels: "h", xray: "x" };
+    const press = key => document.body.dispatchEvent(new KeyboardEvent("keydown", { key, code: key === " " ? "Space" : "", bubbles: true }));
+    addEventListener("message", e => {
+      const d = e.data;
+      if (!d || d.type !== "blueprint") return;
+      if (d.action === "theme") setTheme(d.value);
+      else if (d.action === "render") setRender(d.value);
+      else if (KEYS[d.action]) press(KEYS[d.action]);
+    });
+    // once the rest of the page (the render styles included) has run
+    setTimeout(() => {
+      if (EMBED.render) setRender(EMBED.render);
+      try { parent.postMessage({ type: "blueprint", event: "ready", title: document.title, renders: ["lines", "shaded", "photo"] }, "*"); } catch (e) {}
+    }, 0);
+  }
 
   const HINT0 = (document.getElementById("hint") || {}).innerHTML || "";   // the page's own hint, before a touch hint replaces it
   if (touchMode && M.touchHint) document.getElementById("hint").textContent = M.touchHint + "; drag to turn it, pinch to zoom, two fingers to pan.";
@@ -2510,6 +2551,8 @@ window.WM_GEOMETRY.data = "4Prq/AAA5vrN/AAA0PrE/BwAyPrq/BwA9vq0/AAA5fqj/BwAD/uk/
       scene.environment = photo ? photoEnv : real ? env : null;
       scene.background = photo ? backdrop : null;
       document.documentElement.classList.toggle("bp-photo", photo);
+      // the page's colours change with the photo set's ink: refresh the fills and lines that read them
+      if (window.__bpRecolor) window.__bpRecolor();
       renderer.shadowMap.enabled = photo;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       // filmic tone mapping and sRGB output for the shaded parts; the page's own flat materials

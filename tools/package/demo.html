@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blueprintspace demo</title>
+<style>
+  body { margin: 0; padding: 32px 2.5%; background: #f4f1ec; color: #1c1b19; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p { margin: 0 0 20px; color: #6b6760; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .bar select, .bar button { font: inherit; padding: 8px 12px; border-radius: 999px; border: 1px solid #c9c4bb; background: #fff; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5%; }
+  blueprint-model { border-radius: 14px; overflow: hidden; }
+  code { background: #e9e4dc; padding: 2px 6px; border-radius: 6px; }
+</style>
+<script type="module" src="./index.js"></script>
+</head>
+<body>
+  <h1>blueprintspace</h1>
+  <p>Three <code>&lt;blueprint-model&gt;</code> elements served from this folder (<code>base="./"</code>).</p>
+  <div class="bar">
+    <select id="theme"><option>amber</option><option>dark</option><option>light</option><option>navy</option><option>lime</option><option>dark:inv</option></select>
+    <select id="render"><option value="photo">Photo</option><option value="shaded">Shaded</option><option value="lines">Lines</option></select>
+    <button id="explode">Explode</button><button id="animate">Animate</button><button id="tour">Tour</button>
+  </div>
+  <div class="grid">
+    <blueprint-model base="./" model="gameboy" theme="amber" render="photo"></blueprint-model>
+    <blueprint-model base="./" model="playdate" theme="amber" render="photo"></blueprint-model>
+    <blueprint-model base="./" model="ledcube" theme="amber" render="photo"></blueprint-model>
+  </div>
+<script type="module">
+  const all = [...document.querySelectorAll("blueprint-model")];
+  document.getElementById("theme").onchange = e => all.forEach(m => m.setTheme(e.target.value));
+  document.getElementById("render").onchange = e => all.forEach(m => m.setRender(e.target.value));
+  ["explode", "animate", "tour"].forEach(a => document.getElementById(a).onclick = () => all.forEach(m => m[a]()));
+</script>
+</body>
+</html>
