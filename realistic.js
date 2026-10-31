@@ -514,6 +514,8 @@
         mat.transparent = fade < 0.99 || own < 1; mat.opacity = own * fade; mat.depthWrite = fade > 0.6 && own > 0.6;
         if (!mat.userData.glow) mat.emissive.copy(mat.userData.base).multiplyScalar(Math.max(0, k - 1.05) * 0.45);
       });
+      // an embed asked to be transparent keeps the photo's lighting and shadow but drops its backdrop
+      if (style === "photo") scene.background = root.classList.contains("bp-transparent") ? null : backdrop;
       if (style === "photo" && floor) {
         // the floor sits just under the lowest part as the model opens and closes
         const e = explode * explode * (3 - 2 * explode);

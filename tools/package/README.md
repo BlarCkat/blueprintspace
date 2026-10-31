@@ -35,34 +35,55 @@ BlueprintModel.base = "/blueprintspace/";      // the folder that holds models/ 
 
 or per element: `<blueprint-model base="/blueprintspace/" model="v8">`.
 
-## Attributes
+## Attributes and properties
 
-| Attribute | Values | Default |
-|---|---|---|
-| `model` | a model id (below) | — |
-| `theme` | `dark` `light` `amber` `navy` `lime`, or any of them with `:inv` to swap background and lines | `dark` |
-| `render` | `lines` `shaded` `photo` | `lines` |
-| `background` | `transparent` to show your page behind the model | the theme's |
-| `controls` | present to show the model page's own buttons and title | hidden |
-| `labels` | present to show the callout labels | hidden |
-| `interactive` | `0` to make it a still picture that ignores the pointer | `1` |
-| `base` | where `models/` and `thumbs/` are served from | the CDN |
+Every option is both an HTML attribute and a JavaScript property on the element. Boolean attributes are on when present (or `"true"`), off with `"false"`.
 
-The element sizes like an image: it fills its width at 4:3 unless you give it a height. `theme` and `render` change live; the other attributes reload the model.
+| Attribute / property | Values | Default | |
+|---|---|---|---|
+| `model` | a model id (below) | — | reloads |
+| `theme` | `dark` `light` `amber` `navy` `lime`, or any with `:inv` to swap background and lines | `dark` | live |
+| `render` | `lines` `shaded` `photo` | `lines` | live |
+| `transparent` | boolean: show your page behind the model | off | live |
+| `animation` | boolean: the model's own animation — a screen, a game, an LED pattern | off | live |
+| `xray` | boolean: hidden edges faintly through the parts | on | live |
+| `exploded` | `true` taken apart, `false` assembled; absent: comes apart while hovered | hover | live |
+| `labels` | boolean: callout labels on the parts | off | live |
+| `controls` | boolean: the model page's own buttons, title and hints | off | live |
+| `autorotate` | boolean, or degrees a second (`autorotate="20"`) | off | live |
+| `interactive` | boolean: turn, zoom and take it apart with the pointer | on | live |
+| `motion` | boolean: moving parts and camera easing; `false` keeps it all still | on | reloads |
+| `base` | where `models/` and `thumbs/` are served from | the CDN | reloads |
+
+```html
+<blueprint-model model="playdate" render="photo" theme="amber" animation autorotate="15" xray="false"></blueprint-model>
+```
+
+```js
+const el = document.querySelector("blueprint-model");
+el.animation = true;     // start its animation
+el.transparent = true;   // let the page show through
+el.xray = false;         // no hidden edges
+el.exploded = true;      // take it apart (false: put it together, null: hover again)
+el.autorotate = 20;      // turn at 20 degrees a second (0 stops)
+el.interactive = false;  // a still picture that ignores the pointer
+el.theme = "navy:inv";
+el.render = "shaded";
+```
+
+The element sizes like an image: it fills its width at 4:3 unless you give it a height.
 
 ## Methods and events
 
 ```js
-const el = document.querySelector("blueprint-model");
-el.explode();        // take it apart / put it back
-el.animate();        // start or stop its screen or game animation
-el.tour();           // play the "how it works" tour
-el.reset();          // back to the starting view
-el.xray();           // hidden edges, faintly
-el.setTheme("navy:inv");
-el.setRender("photo");
+el.explode();            // toggle apart / together
+el.toggleAnimation();
+el.tour();               // play the "how it works" tour
+el.reset();              // back to the starting view
 el.addEventListener("ready", e => console.log(e.detail.title));
 ```
+
+In React, set the boolean options as attributes (`animation="true"`, `xray="false"`) or through a ref (`ref.current.animation = true`).
 
 ## Thumbnails
 

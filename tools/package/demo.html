@@ -9,6 +9,7 @@
   h1 { font-size: 22px; margin: 0 0 6px; }
   p { margin: 0 0 20px; color: #6b6760; }
   .bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .bar label { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; border: 1px solid #c9c4bb; background: #fff; font-size: 14px; }
   .bar select, .bar button { font: inherit; padding: 8px 12px; border-radius: 999px; border: 1px solid #c9c4bb; background: #fff; cursor: pointer; }
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5%; }
   blueprint-model { border-radius: 14px; overflow: hidden; }
@@ -22,7 +23,14 @@
   <div class="bar">
     <select id="theme"><option>amber</option><option>dark</option><option>light</option><option>navy</option><option>lime</option><option>dark:inv</option></select>
     <select id="render"><option value="photo">Photo</option><option value="shaded">Shaded</option><option value="lines">Lines</option></select>
-    <button id="explode">Explode</button><button id="animate">Animate</button><button id="tour">Tour</button>
+    <label><input type="checkbox" data-p="animation"> animation</label>
+    <label><input type="checkbox" data-p="transparent"> transparent</label>
+    <label><input type="checkbox" data-p="xray" checked> xray</label>
+    <label><input type="checkbox" data-p="exploded"> exploded</label>
+    <label><input type="checkbox" data-p="autorotate"> autorotate</label>
+    <label><input type="checkbox" data-p="labels"> labels</label>
+    <label><input type="checkbox" data-p="interactive" checked> interactive</label>
+    <button id="tour">Tour</button><button id="reset">Reset</button>
   </div>
   <div class="grid">
     <blueprint-model base="./" model="gameboy" theme="amber" render="photo"></blueprint-model>
@@ -33,7 +41,9 @@
   const all = [...document.querySelectorAll("blueprint-model")];
   document.getElementById("theme").onchange = e => all.forEach(m => m.setTheme(e.target.value));
   document.getElementById("render").onchange = e => all.forEach(m => m.setRender(e.target.value));
-  ["explode", "animate", "tour"].forEach(a => document.getElementById(a).onclick = () => all.forEach(m => m[a]()));
+  // each checkbox sets the property of the same name on every model
+  document.querySelectorAll("[data-p]").forEach(c => c.onchange = () => all.forEach(m => { m[c.dataset.p] = c.checked; }));
+  ["tour", "reset"].forEach(a => document.getElementById(a).onclick = () => all.forEach(m => m[a]()));
 </script>
 </body>
 </html>
