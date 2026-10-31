@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Embed docs · Blueprint Models</title>
+<meta name="description" content="How to embed the Blueprint Models in your own site or app with the blueprintspace package: CDN, npm, attributes, properties, methods and events.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+/* The docs share the gallery's themes (stored as blueprints-theme) and type. */
+:root { --bg: #141414; --fg: #ffffff; --fg-2: rgba(255,255,255,.66); --fg-3: rgba(255,255,255,.42); --rule: rgba(255,255,255,.14); --tint: rgba(255,255,255,.04);
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif; --gutter: clamp(16px, 4vw, 56px); }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.65 var(--body); -webkit-font-smoothing: antialiased; transition: background-color .45s, color .45s; }
+a { color: inherit; }
+code, pre, kbd { font-family: var(--mono); }
+:not(pre) > code { font-size: .88em; padding: 2px 6px; border-radius: 6px; background: var(--tint); border: 1px solid var(--rule); }
+
+.topbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) var(--gutter) 14px; background: var(--bg); border-bottom: 1px solid var(--rule); }
+.mark { font: 800 15px/1 var(--display); font-stretch: 125%; letter-spacing: -.01em; text-decoration: none; }
+.topbar nav { display: flex; align-items: center; gap: 12px; }
+.pill { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2); text-decoration: none; background: transparent; cursor: pointer;
+  border: 1px solid var(--rule); border-radius: 999px; padding: 11px 14px; transition: border-color .2s, color .2s, background-color .2s; }
+.pill:hover, .pill:focus-visible { color: var(--fg); border-color: var(--fg); outline: none; }
+.themes { display: flex; gap: 6px; padding: 5px; border: 1px solid var(--rule); border-radius: 999px; }
+.themes button { width: 24px; height: 24px; border-radius: 50%; padding: 0; cursor: pointer; border: 1px solid var(--rule);
+  background: linear-gradient(135deg, var(--sw-bg) 50%, var(--sw-fg) 50%); transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+.themes button.inv { background: linear-gradient(135deg, var(--sw-fg) 50%, var(--sw-bg) 50%); }
+.themes button:hover { transform: scale(1.12); }
+.themes button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--fg); }
+
+.hero { min-height: 50vh; min-height: 50svh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px;
+  padding: 48px var(--gutter); border-bottom: 1px solid var(--rule); }
+.hero h1 { margin: 0; font: 800 clamp(34px, 6vw, 84px)/.95 var(--display); font-stretch: 125%; letter-spacing: -.035em; }
+.hero p { margin: 0; max-width: 620px; font: 400 clamp(12px, 1.1vw, 15px)/1.6 var(--mono); color: var(--fg-2); }
+.hero .install { display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 6px 6px 6px 18px; border: 1px solid var(--rule); border-radius: 999px; font: 500 13px/1 var(--mono); }
+
+.layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 0; }
+.toc { position: sticky; top: 62px; align-self: start; height: calc(100vh - 62px); overflow: auto; padding: 32px var(--gutter) 32px; border-right: 1px solid var(--rule); }
+.toc a { display: block; padding: 6px 0; font: 500 11px/1.3 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-3); text-decoration: none; }
+.toc a:hover, .toc a.on { color: var(--fg); }
+main { min-width: 0; }
+section { padding: 56px var(--gutter); border-bottom: 1px solid var(--rule); max-width: 1100px; }
+h2 { margin: 0 0 6px; font: 800 clamp(22px, 2.4vw, 32px)/1.1 var(--display); font-stretch: 125%; letter-spacing: -.02em; }
+h3 { margin: 32px 0 8px; font: 500 12px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); }
+section > p, li { color: var(--fg-2); max-width: 720px; }
+.lead { margin: 0 0 22px; }
+
+.code { position: relative; margin: 14px 0; border: 1px solid var(--rule); border-radius: 12px; background: var(--tint); }
+.code .tag { position: absolute; top: 10px; left: 14px; font: 500 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); }
+.code pre { margin: 0; padding: 34px 16px 16px; overflow-x: auto; font-size: 13px; line-height: 1.6; white-space: pre; }
+.code button { position: absolute; top: 6px; right: 6px; padding: 8px 11px; }
+.c-tag { color: var(--fg); } .c-attr { color: var(--fg-2); } .c-str { color: var(--fg-3); }
+
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 11px 12px 11px 0; border-bottom: 1px solid var(--rule); }
+th { font: 500 10px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); }
+td:first-child { white-space: nowrap; }
+td { color: var(--fg-2); }
+.table-wrap { overflow-x: auto; }
+
+/* the playground: the model on the left, its options on the right, the code it takes underneath */
+.play { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; margin-top: 18px; }
+.stage { position: relative; min-height: 340px; border-right: 1px solid var(--rule);
+  background: repeating-linear-gradient(45deg, var(--tint) 0 12px, transparent 12px 24px); }
+.stage blueprint-model { position: absolute; inset: 0; aspect-ratio: auto; height: 100%; }
+.opts { padding: 18px; display: grid; gap: 14px; align-content: start; }
+.opts label.f { display: grid; gap: 6px; font: 500 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); }
+.opts select { font: 500 13px/1 var(--mono); color: var(--fg); background: var(--bg); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; }
+.checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+.checks label { display: flex; align-items: center; gap: 8px; font: 400 13px/1.2 var(--mono); color: var(--fg-2); cursor: pointer; }
+.checks input { accent-color: var(--fg); width: 15px; height: 15px; }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.play .code { grid-column: 1 / -1; margin: 0; border: 0; border-top: 1px solid var(--rule); border-radius: 0; }
+
+.models { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); margin-top: 18px; }
+.models button { display: block; text-align: left; padding: 12px; border: 0; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: transparent; color: inherit; cursor: pointer; }
+.models button:hover { background: var(--tint); }
+.models .pic { aspect-ratio: 4 / 3; background: var(--fg); opacity: .85; -webkit-mask: var(--img) center / contain no-repeat; mask: var(--img) center / contain no-repeat; margin-bottom: 8px; }
+.models b { display: block; font: 500 12px/1.3 var(--mono); }
+.models small { font: 400 11px/1.3 var(--mono); color: var(--fg-3); }
+.note { border-left: 2px solid var(--fg); padding: 2px 0 2px 14px; margin: 18px 0; color: var(--fg-2); max-width: 720px; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc { display: none; }
+  .play { grid-template-columns: 1fr; }
+  .stage { border-right: 0; border-bottom: 1px solid var(--rule); min-height: 280px; }
+}
+@media (max-width: 560px) { .topbar .mark { display: none; } .topbar { justify-content: flex-end; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="mark" href="../">Blueprint Models</a>
+  <nav><a class="pill" href="../">Gallery</a><div class="themes" id="themes" role="group" aria-label="Theme"></div></nav>
+</header>
+
+<div class="hero">
+  <h1>Embed the models</h1>
+  <p>Every model in the gallery is a single HTML element you can put in your own site or app: one script tag from a CDN, or one npm package.</p>
+  <div class="install"><span>npm install blueprintspace</span><button class="pill" data-copy="npm install blueprintspace">Copy</button></div>
+</div>
+
+<div class="layout">
+  <nav class="toc" aria-label="On this page">
+    <a href="#playground">Playground</a>
+    <a href="#quick-start">Quick start</a>
+    <a href="#frameworks">Frameworks</a>
+    <a href="#options">Attributes and properties</a>
+    <a href="#methods">Methods and events</a>
+    <a href="#sizing">Sizing</a>
+    <a href="#self-hosting">Self-hosting</a>
+    <a href="#thumbnails">Thumbnails</a>
+    <a href="#models">Models</a>
+  </nav>
+  <main>
+    <section id="playground">
+      <h2>Playground</h2>
+      <p class="lead">Pick a model and its options; the code underneath is what you'd paste into your page.</p>
+      <div class="play">
+        <div class="stage" id="stage"></div>
+        <div class="opts">
+          <label class="f">Model <select id="p-model"></select></label>
+          <label class="f">Theme <select id="p-theme"><option>dark</option><option>light</option><option>amber</option><option>navy</option><option>lime</option>
+            <option>dark:inv</option><option>light:inv</option><option>amber:inv</option><option>navy:inv</option><option>lime:inv</option></select></label>
+          <label class="f">Render <select id="p-render"><option value="lines">Lines</option><option value="shaded">Shaded</option><option value="photo">Photo</option></select></label>
+          <div class="checks">
+            <label><input type="checkbox" data-o="animation"> animation</label>
+            <label><input type="checkbox" data-o="transparent"> transparent</label>
+            <label><input type="checkbox" data-o="xray" checked> xray</label>
+            <label><input type="checkbox" data-o="exploded"> exploded</label>
+            <label><input type="checkbox" data-o="labels"> labels</label>
+            <label><input type="checkbox" data-o="controls"> controls</label>
+            <label><input type="checkbox" data-o="autorotate"> autorotate</label>
+            <label><input type="checkbox" data-o="interactive" checked> interactive</label>
+          </div>
+          <div class="acts"><button class="pill" id="a-tour">Tour</button><button class="pill" id="a-reset">Reset</button></div>
+        </div>
+        <div class="code"><span class="tag">HTML</span><button class="pill" data-copy-from="p-code">Copy</button><pre id="p-code"></pre></div>
+      </div>
+    </section>
+
+    <section id="quick-start">
+      <h2>Quick start</h2>
+      <h3>From a CDN</h3>
+      <p>Add the script once, then use the element anywhere on the page.</p>
+      <div class="code"><span class="tag">HTML</span><button class="pill" data-copy-next>Copy</button><pre data-v>&lt;script type="module" src="https://cdn.jsdelivr.net/npm/blueprintspace@{v}/index.js"&gt;&lt;/script&gt;
+
+&lt;blueprint-model model="gameboy" theme="amber" render="photo"&gt;&lt;/blueprint-model&gt;</pre></div>
+      <h3>From npm</h3>
+      <div class="code"><span class="tag">Terminal</span><button class="pill" data-copy-next>Copy</button><pre>npm install blueprintspace</pre></div>
+      <div class="code"><span class="tag">JavaScript</span><button class="pill" data-copy-next>Copy</button><pre>import "blueprintspace";                        // registers &lt;blueprint-model&gt;
+import { models, thumbnail, BlueprintModel } from "blueprintspace";</pre></div>
+      <p class="note">The models load from the jsDelivr CDN by default, matching the installed version, so nothing else needs copying. To serve them yourself, see <a href="#self-hosting">self-hosting</a>.</p>
+    </section>
+
+    <section id="frameworks">
+      <h2>Frameworks</h2>
+      <p class="lead">It's a standard custom element, so it works in any framework, or none.</p>
+      <h3>React</h3>
+      <div class="code"><span class="tag">JSX</span><button class="pill" data-copy-next>Copy</button><pre>import "blueprintspace";
+import { useRef } from "react";
+
+export function Hero() {
+  const ref = useRef(null);
+  return (
+    &lt;&gt;
+      &lt;blueprint-model ref={ref} model="ps5" render="shaded" autorotate="15" style={{ width: "100%" }} /&gt;
+      &lt;button onClick={() =&gt; ref.current.explode()}&gt;Take it apart&lt;/button&gt;
+    &lt;/&gt;
+  );
+}</pre></div>
+      <p>React 19 sets the element's properties directly. In React 18, give boolean options as strings (<code>animation="true"</code>, <code>xray="false"</code>) or set them through the ref (<code>ref.current.animation = true</code>).</p>
+      <h3>Vue</h3>
+      <div class="code"><span class="tag">Vue</span><button class="pill" data-copy-next>Copy</button><pre>&lt;script setup&gt;
+import "blueprintspace";
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;blueprint-model model="v8" render="photo" :animation="true" :transparent="true" /&gt;
+&lt;/template&gt;</pre></div>
+      <p>Tell Vue it's a custom element: <code>compilerOptions.isCustomElement = tag =&gt; tag === "blueprint-model"</code> in the Vue plugin's options.</p>
+      <h3>Svelte</h3>
+      <div class="code"><span class="tag">Svelte</span><button class="pill" data-copy-next>Copy</button><pre>&lt;script&gt;
+  import "blueprintspace";
+  let el;
+&lt;/script&gt;
+
+&lt;blueprint-model bind:this={el} model="walkman" theme="navy" render="shaded" /&gt;
+&lt;button on:click={() =&gt; (el.exploded = !el.exploded)}&gt;Explode&lt;/button&gt;</pre></div>
+    </section>
+
+    <section id="options">
+      <h2>Attributes and properties</h2>
+      <p class="lead">Every option is both an HTML attribute and a JavaScript property on the element. Boolean attributes are on when present (or <code>"true"</code>) and off with <code>"false"</code>. All of them change live except <code>model</code>, <code>base</code> and <code>motion</code>, which reload the model.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Attribute / property</th><th>Values</th><th>Default</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>model</code></td><td>a model id</td><td>—</td><td>Which model to show. See <a href="#models">the list</a>.</td></tr>
+          <tr><td><code>theme</code></td><td><code>dark</code> <code>light</code> <code>amber</code> <code>navy</code> <code>lime</code>, each with <code>:inv</code></td><td><code>dark</code></td><td>The colours. <code>:inv</code> swaps background and lines. In the Photo render it sets the backdrop.</td></tr>
+          <tr><td><code>render</code></td><td><code>lines</code> <code>shaded</code> <code>photo</code></td><td><code>lines</code></td><td>Line drawing, flat-shaded, or a photoshoot-style render with materials, textures and shadows.</td></tr>
+          <tr><td><code>animation</code></td><td>boolean</td><td>off</td><td>Plays the model's own animation: a screen, a game, an LED pattern. Models without one ignore it.</td></tr>
+          <tr><td><code>transparent</code></td><td>boolean</td><td>off</td><td>Shows your page behind the model, in every render style.</td></tr>
+          <tr><td><code>xray</code></td><td>boolean</td><td>on</td><td>Hidden edges faintly visible through the parts.</td></tr>
+          <tr><td><code>exploded</code></td><td><code>true</code> <code>false</code>, or absent</td><td>hover</td><td><code>true</code> takes it apart, <code>false</code> holds it assembled; without the attribute it comes apart while hovered.</td></tr>
+          <tr><td><code>labels</code></td><td>boolean</td><td>off</td><td>Callout labels on the parts.</td></tr>
+          <tr><td><code>controls</code></td><td>boolean</td><td>off</td><td>The model page's own buttons, title and hints.</td></tr>
+          <tr><td><code>autorotate</code></td><td>boolean, or degrees a second</td><td>off</td><td>A slow turn: <code>autorotate</code> at 12°/s, or <code>autorotate="30"</code>.</td></tr>
+          <tr><td><code>interactive</code></td><td>boolean</td><td>on</td><td>Turn, zoom and take it apart with the pointer. Off makes it a still picture that ignores the pointer.</td></tr>
+          <tr><td><code>motion</code></td><td>boolean</td><td>on</td><td>Moving parts (fans, reels, cranks) and camera easing. Off keeps everything still.</td></tr>
+          <tr><td><code>base</code></td><td>a URL</td><td>the CDN</td><td>Where <code>models/</code> and <code>thumbs/</code> are served from.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><span class="tag">HTML</span><button class="pill" data-copy-next>Copy</button><pre>&lt;blueprint-model model="playdate" render="photo" theme="amber"
+  animation transparent xray="false" autorotate="20"&gt;&lt;/blueprint-model&gt;</pre></div>
+      <div class="code"><span class="tag">JavaScript</span><button class="pill" data-copy-next>Copy</button><pre>const el = document.querySelector("blueprint-model");
+el.animation = true;      // start its animation
+el.transparent = true;    // let the page show through
+el.xray = false;          // no hidden edges
+el.exploded = true;       // take it apart (false: together, null: on hover)
+el.autorotate = 20;       // degrees a second (0 stops)
+el.interactive = false;   // a still picture
+el.theme = "navy:inv";
+el.render = "shaded";</pre></div>
+    </section>
+
+    <section id="methods">
+      <h2>Methods and events</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>explode()</code></td><td>Takes it apart, or puts it back together.</td></tr>
+          <tr><td><code>toggleAnimation()</code></td><td>Starts or stops its animation.</td></tr>
+          <tr><td><code>tour()</code></td><td>Plays the "how it works" tour.</td></tr>
+          <tr><td><code>reset()</code></td><td>Back to the starting view.</td></tr>
+          <tr><td><code>setTheme(t)</code>, <code>setRender(r)</code></td><td>The same as setting <code>theme</code> or <code>render</code>.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Event</th><th>When</th></tr></thead>
+        <tbody><tr><td><code>ready</code></td><td>The model has loaded and will take commands. <code>event.detail</code> holds <code>{ model, title }</code>.</td></tr></tbody>
+      </table></div>
+      <div class="code"><span class="tag">JavaScript</span><button class="pill" data-copy-next>Copy</button><pre>el.addEventListener("ready", e =&gt; console.log("loaded", e.detail.title));
+el.info;                  // { id, label, kind, category, tags }
+BlueprintModel.models;    // every model in the package</pre></div>
+    </section>
+
+    <section id="sizing">
+      <h2>Sizing</h2>
+      <p>The element behaves like an image: it fills the width it's given at a 4:3 ratio. Give it a height, or an <code>aspect-ratio</code>, to change that. It's an ordinary block element, so CSS layout, borders, rounded corners and shadows all apply.</p>
+      <div class="code"><span class="tag">CSS</span><button class="pill" data-copy-next>Copy</button><pre>blueprint-model { width: 100%; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; }
+blueprint-model::part(frame) { /* the iframe inside, if you need it */ }</pre></div>
+      <p>Each model runs in its own sandboxed iframe, so its scripts and styles never touch your page and yours never touch it.</p>
+    </section>
+
+    <section id="self-hosting">
+      <h2>Self-hosting</h2>
+      <p>By default the models load from jsDelivr. To serve them from your own domain, copy the package's <code>models/</code> and <code>thumbs/</code> folders into your public folder, then point the element at them, once for every element or on one.</p>
+      <div class="code"><span class="tag">Terminal</span><button class="pill" data-copy-next>Copy</button><pre>cp -r node_modules/blueprintspace/models node_modules/blueprintspace/thumbs public/blueprintspace/</pre></div>
+      <div class="code"><span class="tag">JavaScript</span><button class="pill" data-copy-next>Copy</button><pre>import { BlueprintModel } from "blueprintspace";
+BlueprintModel.base = "/blueprintspace/";        // the folder holding models/ and thumbs/</pre></div>
+      <div class="code"><span class="tag">HTML</span><button class="pill" data-copy-next>Copy</button><pre>&lt;blueprint-model base="/blueprintspace/" model="v8"&gt;&lt;/blueprint-model&gt;</pre></div>
+      <p>The model pages load three.js from cdnjs and their fonts from Google Fonts.</p>
+    </section>
+
+    <section id="thumbnails">
+      <h2>Thumbnails</h2>
+      <p>Every model also comes as a still line drawing, white on transparent. <code>thumbnail(id)</code> gives its URL. Use it as an <code>&lt;img&gt;</code>, or as a CSS mask to colour it with any colour.</p>
+      <div class="code"><span class="tag">JavaScript</span><button class="pill" data-copy-next>Copy</button><pre>import { thumbnail } from "blueprintspace";
+img.src = thumbnail("gameboy");</pre></div>
+      <div class="code"><span class="tag">CSS</span><button class="pill" data-copy-next>Copy</button><pre data-v>.icon {
+  background: currentColor;
+  mask: url(https://cdn.jsdelivr.net/npm/blueprintspace@{v}/thumbs/v8.webp) center / contain no-repeat;
+}</pre></div>
+    </section>
+
+    <section id="models">
+      <h2>Models</h2>
+      <p class="lead">Click one to load it into the playground. Its <code>model</code> id is under its name.</p>
+      <div class="models" id="models-grid"></div>
+    </section>
+  </main>
+</div>
+
+<script type="module">
+  // the component, served from this site's copy of the package
+  const PKG = new URL("../packages/blueprintspace/", location.href).href;
+  const { BlueprintModel, models } = await import(PKG + "index.js");
+  BlueprintModel.base = PKG;
+  const V = BlueprintModel.version;
+  document.querySelectorAll("pre[data-v]").forEach(p => { p.innerHTML = p.innerHTML.replaceAll("{v}", V); });
+
+  // ---------- themes, shared with the gallery ----------
+  const THEMES = { dark: ["#141414", "#ffffff"], light: ["#f3f3f1", "#141414"], amber: ["#ffdf77", "#141414"], navy: ["#0d2c51", "#ffffff"], lime: ["#c8f25c", "#123d22"] };
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  let theme = store.get("blueprints-theme") || "dark";
+  if (!THEMES[theme.split(":")[0]]) theme = "dark";
+  const rgba = (hex, a) => "rgba(" + [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).join(", ") + ", " + a + ")";
+  const themesEl = document.getElementById("themes");
+  function paint() {
+    const [t, inv] = theme.split(":");
+    let [bg, fg] = THEMES[t];
+    if (inv === "inv") [bg, fg] = [fg, bg];
+    const s = document.documentElement.style;
+    s.setProperty("--bg", bg); s.setProperty("--fg", fg); s.setProperty("--fg-2", rgba(fg, 0.66)); s.setProperty("--fg-3", rgba(fg, 0.42));
+    s.setProperty("--rule", rgba(fg, 0.15)); s.setProperty("--tint", rgba(fg, 0.04));
+    themesEl.querySelectorAll("button").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.t === t)); b.classList.toggle("inv", b.dataset.t === t && inv === "inv"); });
+  }
+  Object.entries(THEMES).forEach(([t, [bg, fg]]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.t = t; b.title = t[0].toUpperCase() + t.slice(1) + " theme (click again to invert)";
+    b.style.setProperty("--sw-bg", bg); b.style.setProperty("--sw-fg", fg);
+    b.addEventListener("click", () => {
+      const [cur, inv] = theme.split(":");
+      theme = t === cur ? (inv === "inv" ? t : t + ":inv") : t;
+      store.set("blueprints-theme", theme); paint();
+      document.getElementById("p-theme").value = theme; update();
+    });
+    themesEl.appendChild(b);
+  });
+  paint();
+
+  // ---------- the playground ----------
+  const $ = id => document.getElementById(id);
+  const sel = $("p-model");
+  models.forEach(m => sel.add(new Option(m.label, m.id)));
+  sel.value = "gameboy";
+  $("p-theme").value = theme;
+  $("p-render").value = "photo";
+  const el = document.createElement("blueprint-model");
+  $("stage").appendChild(el);
+  const checks = [...document.querySelectorAll("[data-o]")];
+  const DEFAULT_ON = { xray: true, interactive: true };
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  function update() {
+    el.model = sel.value;
+    el.theme = $("p-theme").value;
+    el.render = $("p-render").value;
+    checks.forEach(c => { el[c.dataset.o] = c.dataset.o === "autorotate" ? (c.checked ? 15 : 0) : c.checked; });
+    // the code: only what differs from the defaults
+    const attrs = [["model", el.model]];
+    if (el.theme !== "dark") attrs.push(["theme", el.theme]);
+    if (el.render !== "lines") attrs.push(["render", el.render]);
+    checks.forEach(c => {
+      const k = c.dataset.o;
+      if (k === "autorotate") { if (c.checked) attrs.push(["autorotate", "15"]); }
+      else if (c.checked !== !!DEFAULT_ON[k]) attrs.push([k, c.checked ? null : "false"]);
+    });
+    const tag = attrs.map(([k, v]) => v === null ? `<span class="c-attr">${k}</span>` : `<span class="c-attr">${k}</span>=<span class="c-str">"${esc(v)}"</span>`).join(" ");
+    $("p-code").innerHTML = esc(`<script type="module" src="https://cdn.jsdelivr.net/npm/blueprintspace@${V}/index.js"><\/script>`) + "\n\n" +
+      `<span class="c-tag">&lt;blueprint-model</span> ${tag}<span class="c-tag">&gt;&lt;/blueprint-model&gt;</span>`;
+  }
+  [sel, $("p-theme"), $("p-render"), ...checks].forEach(x => x.addEventListener("change", update));
+  $("a-tour").onclick = () => el.tour();
+  $("a-reset").onclick = () => el.reset();
+  update();
+
+  // ---------- the model list ----------
+  const grid = $("models-grid");
+  models.forEach(m => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = `<div class="pic" style="--img:url('${PKG}thumbs/${m.id}.webp')"></div><b></b><small></small>`;
+    b.querySelector("b").textContent = m.label; b.querySelector("small").textContent = m.id;
+    b.onclick = () => { sel.value = m.id; update(); $("playground").scrollIntoView({ behavior: "smooth" }); };
+    grid.appendChild(b);
+  });
+
+  // ---------- copy buttons, and the contents highlighting the section in view ----------
+  const copy = (btn, text) => navigator.clipboard && navigator.clipboard.writeText(text).then(() => { const t = btn.textContent; btn.textContent = "Copied"; setTimeout(() => { btn.textContent = t; }, 1200); });
+  document.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copy(b, b.dataset.copy));
+  document.querySelectorAll("[data-copy-next]").forEach(b => b.onclick = () => copy(b, b.parentNode.querySelector("pre").textContent));
+  document.querySelectorAll("[data-copy-from]").forEach(b => b.onclick = () => copy(b, $(b.dataset.copyFrom).textContent));
+  const links = [...document.querySelectorAll(".toc a")];
+  new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) links.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id));
+  }), { rootMargin: "-30% 0px -60% 0px" }).observe(document.querySelector("#playground"));
+  document.querySelectorAll("main section").forEach(sct => new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) links.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id));
+  }), { rootMargin: "-30% 0px -60% 0px" }).observe(sct));
+</script>
+</body>
+</html>
