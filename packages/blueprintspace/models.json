@@ -28,18 +28,18 @@
     "tags": "laptop apple macbook pro m5 notebook 2025"
   },
   {
-    "id": "gamingpc",
-    "label": "Custom Gaming PC",
-    "kind": "desktop",
-    "category": "Computers",
-    "tags": "pc gaming custom build tower desktop rgb gpu cpu aio liquid cooling fans animated"
-  },
-  {
     "id": "framework",
     "label": "Framework Laptop 13",
     "kind": "laptop",
     "category": "Computers",
     "tags": "framework laptop 13 repairable modular expansion cards notebook linux"
+  },
+  {
+    "id": "gamingpc",
+    "label": "Custom Gaming PC",
+    "kind": "desktop",
+    "category": "Computers",
+    "tags": "pc gaming custom build tower desktop rgb gpu cpu aio liquid cooling fans animated"
   },
   {
     "id": "iphone17",
@@ -201,5 +201,12 @@
     "kind": "gadget",
     "category": "Gadgets",
     "tags": "led cube volumetric display voxel light lamp gadget animated red"
+  },
+  {
+    "id": "fridge",
+    "label": "Refrigerator",
+    "kind": "appliance",
+    "category": "Appliances",
+    "tags": "fridge refrigerator freezer french door appliance kitchen ice water dispenser compressor"
   }
 ]

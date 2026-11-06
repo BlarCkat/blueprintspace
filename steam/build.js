@@ -185,5 +185,5 @@ const html = buildPage({ template: "cpu", geometry: geometry.js, model, swaps: [
 ] });
 fs.writeFileSync(path.join(HERE, "index.html"), html);
 const count = addToGallery({ id: "steam", label: "Steam Machine", kind: "console", tags: "steam machine valve console pc gaming steamos fan led",
-  key: "stm-theme", category: "Consoles", html }, "psp");
+  key: "stm-theme", category: "Consoles", html }, "morph");
 console.log(`steam/index.html ${(html.length / 1e6).toFixed(2)} MB, ${geometry.stats}; index.html now has ${count} models`);

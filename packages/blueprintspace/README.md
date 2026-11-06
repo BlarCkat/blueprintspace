@@ -108,8 +108,8 @@ In React, set the boolean options as attributes (`animation="true"`, `xray="fals
 | `typewriter` | Vintage Typewriter | Computers |
 | `spectre` | Spectre x360 14 | Computers |
 | `macbookpro` | MacBook Pro 14 (M5) | Computers |
-| `gamingpc` | Custom Gaming PC | Computers |
 | `framework` | Framework Laptop 13 | Computers |
+| `gamingpc` | Custom Gaming PC | Computers |
 | `iphone17` | iPhone 17 | Phones |
 | `walkman` | Sony Walkman | Audio |
 | `gameboy` | Game Boy | Consoles |
@@ -133,6 +133,7 @@ In React, set the boolean options as attributes (`animation="true"`, `xray="fals
 | `spaceship` | SX-7 Starhopper | Vehicles |
 | `rubiks` | Rubik's Cube | Toys |
 | `ledcube` | LED Cube | Gadgets |
+| `fridge` | Refrigerator | Appliances |
 
 `models.json` lists them with their tags.
 
