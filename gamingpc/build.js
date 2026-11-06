@@ -247,5 +247,5 @@ const html = buildPage({ template: "cpu", geometry: geometry.js, model: read(pat
 ] });
 fs.writeFileSync(path.join(HERE, "index.html"), html);
 const count = addToGallery({ id: "gamingpc", label: "Custom Gaming PC", kind: "desktop", tags: "pc gaming custom build tower desktop rgb gpu cpu aio liquid cooling fans animated",
-  key: "gpc-theme", category: "Computers", html }, "macbookpro");
+  key: "gpc-theme", category: "Computers", html }, "framework");
 console.log(`gamingpc/index.html ${(html.length / 1e6).toFixed(2)} MB, ${geometry.stats}; index.html now has ${count} models`);
