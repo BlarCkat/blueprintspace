@@ -134,6 +134,7 @@ In React, set the boolean options as attributes (`animation="true"`, `xray="fals
 | `rubiks` | Rubik's Cube | Toys |
 | `ledcube` | LED Cube | Gadgets |
 | `fridge` | Refrigerator | Appliances |
+| `washer` | Washing Machine | Appliances |
 
 `models.json` lists them with their tags.
 

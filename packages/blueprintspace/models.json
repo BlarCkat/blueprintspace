@@ -208,5 +208,12 @@
     "kind": "appliance",
     "category": "Appliances",
     "tags": "fridge refrigerator freezer french door appliance kitchen ice water dispenser compressor"
+  },
+  {
+    "id": "washer",
+    "label": "Washing Machine",
+    "kind": "appliance",
+    "category": "Appliances",
+    "tags": "washing machine washer laundry front loader drum spin appliance"
   }
 ]
