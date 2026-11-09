@@ -1,6 +1,6 @@
 /** blueprintspace 1.0.0: interactive 3D blueprint illustrations as a <blueprint-model> web component. */
 
-export type ModelId = "macintosh" | "typewriter" | "spectre" | "macbookpro" | "framework" | "gamingpc" | "iphone17" | "walkman" | "gameboy" | "playdate" | "gbconcept" | "playstation" | "ps3" | "ps4" | "ps5" | "xbox" | "switch" | "psp" | "morph" | "steam" | "cpu" | "egpu" | "turbofan" | "v8" | "hover" | "cybertruck" | "spaceship" | "rubiks" | "ledcube" | "fridge" | "washer";
+export type ModelId = "macintosh" | "typewriter" | "spectre" | "macbookpro" | "framework" | "gamingpc" | "iphone17" | "walkman" | "gameboy" | "playdate" | "gbconcept" | "playstation" | "ps3" | "ps4" | "ps5" | "xbox" | "switch" | "psp" | "morph" | "steam" | "cpu" | "egpu" | "turbofan" | "v8" | "hover" | "cybertruck" | "spaceship" | "rubiks" | "ledcube" | "fridge" | "washer" | "book";
 export type Theme = "dark" | "light" | "amber" | "navy" | "lime" | "dark:inv" | "light:inv" | "amber:inv" | "navy:inv" | "lime:inv";
 export type Render = "lines" | "shaded" | "photo";
 /** A boolean attribute: present or "true" is on, "false" is off. */

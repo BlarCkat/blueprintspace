@@ -215,5 +215,12 @@
     "kind": "appliance",
     "category": "Appliances",
     "tags": "washing machine washer laundry front loader drum spin appliance"
+  },
+  {
+    "id": "book",
+    "label": "Book",
+    "kind": "object",
+    "category": "Objects",
+    "tags": "book hardcover pages turning reading infinite animated paper"
   }
 ]
