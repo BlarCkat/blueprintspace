@@ -15,7 +15,7 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/, framework/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, morph/, steam/, walkman/, gameboy/, playdate/, gbconcept/, ledcube/, fridge/, spaceship/ and v8/build.js's); key: the localStorage theme key the page uses
+// macbookpro/, framework/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, morph/, steam/, walkman/, gameboy/, playdate/, gbconcept/, ledcube/, fridge/, washer/, spaceship/ and v8/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
@@ -77,6 +77,8 @@ const MODELS = [
     dir: "ledcube", key: "led-theme", category: "Gadgets" },
   { id: "fridge", label: "Refrigerator", kind: "appliance", tags: "fridge refrigerator freezer french door appliance kitchen ice water dispenser compressor",
     dir: "fridge", key: "frg-theme", category: "Appliances" },
+  { id: "washer", label: "Washing Machine", kind: "appliance", tags: "washing machine washer laundry front loader drum spin appliance",
+    dir: "washer", key: "wsh-theme", category: "Appliances" },
 ];
 const DEFAULT = "macintosh";
 
