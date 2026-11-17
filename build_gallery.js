@@ -15,7 +15,7 @@ const HERE = __dirname;
 const ROOT = path.join(HERE, "..");
 // listed in dropdown order: models are grouped under their category's heading.
 // folder: the page folder beside this one (dir: a folder in this one, for pages built here, like
-// macbookpro/, framework/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, switch/, psp/, morph/, steam/, walkman/, gameboy/, playdate/, gbconcept/, ledcube/, fridge/, washer/, book/, spaceship/ and v8/build.js's); key: the localStorage theme key the page uses
+// macbookpro/, framework/, gamingpc/, egpu/, hover/, cybertruck/, rubiks/, typewriter/, xbox/, x360pad/, dualsense/, switch/, psp/, morph/, steam/, walkman/, gameboy/, playdate/, gbconcept/, ledcube/, fridge/, washer/, book/, spaceship/ and v8/build.js's); key: the localStorage theme key the page uses
 const MODELS = [
   { id: "macintosh", label: "Macintosh 128K", kind: "desktop", tags: "desktop apple mac 1984 computer",
     folder: "macintosh_landing", key: "mac128k-theme", category: "Computers" },
@@ -47,8 +47,12 @@ const MODELS = [
     folder: "ps4_landing", key: "ps4-theme", category: "Consoles" },
   { id: "ps5", label: "PlayStation 5", kind: "console", tags: "console sony ps5 dualsense 2020 games",
     folder: "ps5_landing", key: "ps5-theme", category: "Consoles" },
+  { id: "dualsense", label: "DualSense Controller", kind: "controller", tags: "dualsense ps5 playstation controller gamepad sony adaptive triggers haptics touchpad",
+    dir: "dualsense", key: "ds5-theme", category: "Consoles" },
   { id: "xbox", label: "Xbox Series X", kind: "console", tags: "xbox series x microsoft console games 2020 fan",
     dir: "xbox", key: "xsx-theme", category: "Consoles" },
+  { id: "x360pad", label: "Xbox 360 Controller", kind: "controller", tags: "xbox 360 controller gamepad joypad microsoft wireless sticks triggers",
+    dir: "x360pad", key: "x36-theme", category: "Consoles" },
   { id: "switch", label: "Nintendo Switch (OLED)", kind: "console", tags: "nintendo switch oled handheld console joy-con games portable",
     dir: "switch", key: "nsw-theme", category: "Consoles" },
   { id: "psp", label: "PlayStation Portable", kind: "console", tags: "psp playstation portable sony handheld umd 2004 games",
