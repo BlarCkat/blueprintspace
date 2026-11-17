@@ -119,7 +119,9 @@ In React, set the boolean options as attributes (`animation="true"`, `xray="fals
 | `ps3` | PlayStation 3 | Consoles |
 | `ps4` | PlayStation 4 | Consoles |
 | `ps5` | PlayStation 5 | Consoles |
+| `dualsense` | DualSense Controller | Consoles |
 | `xbox` | Xbox Series X | Consoles |
+| `x360pad` | Xbox 360 Controller | Consoles |
 | `switch` | Nintendo Switch (OLED) | Consoles |
 | `psp` | PlayStation Portable | Consoles |
 | `morph` | Morph Handheld | Consoles |

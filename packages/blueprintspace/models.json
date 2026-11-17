@@ -105,11 +105,25 @@
     "tags": "console sony ps5 dualsense 2020 games"
   },
   {
+    "id": "dualsense",
+    "label": "DualSense Controller",
+    "kind": "controller",
+    "category": "Consoles",
+    "tags": "dualsense ps5 playstation controller gamepad sony adaptive triggers haptics touchpad"
+  },
+  {
     "id": "xbox",
     "label": "Xbox Series X",
     "kind": "console",
     "category": "Consoles",
     "tags": "xbox series x microsoft console games 2020 fan"
+  },
+  {
+    "id": "x360pad",
+    "label": "Xbox 360 Controller",
+    "kind": "controller",
+    "category": "Consoles",
+    "tags": "xbox 360 controller gamepad joypad microsoft wireless sticks triggers"
   },
   {
     "id": "switch",
